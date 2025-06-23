@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/post_service.dart';
 import '../../widgets/post_card.dart';
 import '../../models/post.dart';
+import 'create_post_screen.dart';
 
 class PostFeedScreen extends StatefulWidget {
   const PostFeedScreen({Key? key}) : super(key: key);
@@ -81,14 +82,17 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
         child: _buildBody(),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           // Navigate to create post screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Create post feature coming soon!'),
-              duration: Duration(seconds: 1),
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreatePostScreen(),
             ),
           );
+          if (result == true) {
+            _loadPosts();
+          }
         },
         child: const Icon(Icons.add),
       ),
