@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import '../models/post.dart';
 
 class PostCard extends StatelessWidget {
-  final Post post;
+  final Map<String, dynamic> post;
   final VoidCallback? onTap;
   final VoidCallback? onCommentTap;
 
@@ -16,6 +15,15 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final communityName = post['communityName'] ?? '';
+    final authorUsername = post['author'] ?? post['authorUsername'] ?? 'user';
+    final createdAt = post['createdAt'] is DateTime
+        ? post['createdAt']
+        : DateTime.now();
+    final title = post['title'] ?? '';
+    final content = post['body'] ?? post['content'] ?? '';
+    final commentCount = (post['comments'] is List) ? post['comments'].length : (post['commentCount'] ?? 0);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
@@ -33,8 +41,8 @@ class PostCard extends StatelessWidget {
                     radius: 12,
                     backgroundColor: Theme.of(context).primaryColor,
                     child: Text(
-                      post.communityName.isNotEmpty 
-                          ? post.communityName[0].toUpperCase()
+                      communityName.isNotEmpty 
+                          ? communityName[0].toUpperCase()
                           : 'C',
                       style: const TextStyle(
                         fontSize: 12,
@@ -49,7 +57,7 @@ class PostCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'r/${post.communityName}',
+                          'r/$communityName',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -57,7 +65,7 @@ class PostCard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'u/${post.authorUsername} • ${timeago.format(post.createdAt)}',
+                          'u/$authorUsername • ${timeago.format(createdAt)}',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey[600],
@@ -69,10 +77,9 @@ class PostCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              
               // Post title
               Text(
-                post.title,
+                title,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -81,11 +88,10 @@ class PostCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 8),
-              
               // Post content preview
-              if (post.content.isNotEmpty)
+              if (content.isNotEmpty)
                 Text(
-                  post.content,
+                  content,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey[800],
@@ -94,7 +100,6 @@ class PostCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               const SizedBox(height: 12),
-              
               // Action buttons
               Row(
                 children: [
@@ -116,7 +121,7 @@ class PostCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${post.commentCount}',
+                            '$commentCount',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],

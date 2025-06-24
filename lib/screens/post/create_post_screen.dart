@@ -4,6 +4,7 @@ import '../../models/community.dart';
 import '../../services/post_service.dart';
 import '../../services/community_service.dart';
 import '../../widgets/community_selector.dart';
+import '../../main.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({Key? key}) : super(key: key);
@@ -98,6 +99,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       await _postService.addPost(newPost);
 
+      // Add to global postsNotifier
+      postsNotifier.value = [...postsNotifier.value, {
+        'id': newPost.id,
+        'title': newPost.title,
+        'author': newPost.authorUsername,
+        'body': newPost.content,
+        'comments': [],
+      }];
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -106,7 +116,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
         );
         Navigator.pop(context, true); // Return true to indicate success
-        // Navigate to home screen to show the new post
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/',

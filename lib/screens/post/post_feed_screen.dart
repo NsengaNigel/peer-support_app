@@ -1,59 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../services/post_service.dart';
+import '../../main.dart';
 import '../../widgets/post_card.dart';
-import '../../models/post.dart';
 import 'create_post_screen.dart';
 
-class PostFeedScreen extends StatefulWidget {
+class PostFeedScreen extends StatelessWidget {
   const PostFeedScreen({Key? key}) : super(key: key);
-
-  @override
-  State<PostFeedScreen> createState() => _PostFeedScreenState();
-}
-
-class _PostFeedScreenState extends State<PostFeedScreen> {
-  final PostService _postService = PostService();
-  final ScrollController _scrollController = ScrollController();
-  
-  // Mock user data - replace with actual user data later
-  final List<String> _joinedCommunities = ['programming', 'university'];
-  
-  List<Post> _posts = [];
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPosts();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadPosts() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
-      
-      final posts = await _postService.getFeedForUser(_joinedCommunities);
-      
-      setState(() {
-        _posts = posts;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _hasError = true;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,122 +28,71 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadPosts,
-        child: _buildBody(),
+      body: ValueListenableBuilder<List<Map<String, dynamic>>>(
+        valueListenable: postsNotifier,
+        builder: (context, posts, _) {
+          if (posts.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.post_add,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No posts yet',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Join some communities or create your first post!',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            );
+          }
+          return ListView.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index];
+              return PostCard(
+                post: post,
+                onTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/post',
+                    arguments: {'postId': post['id']},
+                  );
+                },
+                onCommentTap: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/post',
+                    arguments: {'postId': post['id']},
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          // Navigate to create post screen
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const CreatePostScreen(),
             ),
           );
-          if (result == true) {
-            _loadPosts();
-          }
+          // No need to reload, ValueNotifier will update automatically
         },
         child: const Icon(Icons.add),
       ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (_hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Something went wrong',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Pull to refresh',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_posts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.post_add,
-              size: 64,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No posts yet',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Join some communities or create your first post!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      controller: _scrollController,
-      itemCount: _posts.length,
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemBuilder: (context, index) {
-        final post = _posts[index];
-        return PostCard(
-          post: post,
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/post',
-              arguments: {'postId': post.id},
-            );
-          },
-          onCommentTap: () {
-            Navigator.pushNamed(
-              context,
-              '/post',
-              arguments: {'postId': post.id},
-            );
-          },
-        );
-      },
     );
   }
 } 
