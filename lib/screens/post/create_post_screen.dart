@@ -106,6 +106,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           ),
         );
         Navigator.pop(context, true); // Return true to indicate success
+        // Navigate to home screen to show the new post
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/',
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {

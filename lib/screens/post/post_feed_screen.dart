@@ -178,21 +178,17 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
         return PostCard(
           post: post,
           onTap: () {
-            // Navigate to post detail screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Opening post: ${post.title}'),
-                duration: const Duration(seconds: 1),
-              ),
+            Navigator.pushNamed(
+              context,
+              '/post',
+              arguments: {'postId': post.id},
             );
           },
           onCommentTap: () {
-            // Navigate to post detail with focus on comments
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Comments for: ${post.title}'),
-                duration: const Duration(seconds: 1),
-              ),
+            Navigator.pushNamed(
+              context,
+              '/post',
+              arguments: {'postId': post.id},
             );
           },
         );

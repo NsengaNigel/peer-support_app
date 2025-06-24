@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
-import 'screens/post/post_feed_screen.dart';
+import 'package:flutter/services.dart';
+import 'navigation/app_router.dart';
+import 'navigation/main_navigation.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(UniversityRedditApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class UniversityRedditApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Peer Support App',
+      title: 'UniReddit',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.orange,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       ),
-      home: PostFeedScreen(),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Colors.orange,
+        scaffoldBackgroundColor: Colors.grey[900],
+      ),
+      home: MainNavigation(),
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 } 
