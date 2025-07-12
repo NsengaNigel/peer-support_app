@@ -11,6 +11,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   timeago: ^3.6.0
+  # Firebase dependencies (uncomment for Android/iOS)
+  # firebase_core: ^2.15.0
+  # firebase_auth: ^4.7.2
 
 dev_dependencies:
   flutter_test:

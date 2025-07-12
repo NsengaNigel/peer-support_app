@@ -7,6 +7,10 @@ import '../screens/profile_screen.dart';
 import 'app_drawer.dart';
 
 class MainNavigation extends StatefulWidget {
+  final VoidCallback? onLogout;
+  
+  const MainNavigation({Key? key, this.onLogout}) : super(key: key);
+  
   @override
   _MainNavigationState createState() => _MainNavigationState();
 }
@@ -15,12 +19,12 @@ class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
 
-  final List<Widget> _screens = [
+  List<Widget> get _screens => [
     HomeScreen(),
     CommunitiesScreen(),
     CreatePostScreen(),
     InboxScreen(),
-    ProfileScreen(),
+    ProfileScreen(onLogout: widget.onLogout),
   ];
 
   final List<BottomNavigationBarItem> _navItems = [
@@ -71,7 +75,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: AppDrawer(),
+      drawer: AppDrawer(onLogout: widget.onLogout),
       body: PageView(
         controller: _pageController,
         children: _screens,
