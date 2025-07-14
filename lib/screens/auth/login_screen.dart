@@ -42,15 +42,14 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
-      // Simple validation for web testing
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
       
-      // Simulate loading
-      await Future.delayed(Duration(milliseconds: 800));
-      
       if (kIsWeb) {
         // Web testing mode - check against UserRegistry
+        // Simulate loading
+        await Future.delayed(Duration(milliseconds: 800));
+        
         if (UserRegistry.authenticateUser(email, password)) {
           // Store user data
           UserManager.setUser(
@@ -74,8 +73,21 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         // Mobile mode - use Firebase authentication
-        // This will be implemented when Firebase is enabled
-        throw 'Mobile authentication not yet implemented';
+        final credential = await _authService.signInWithEmailAndPassword(email, password);
+        
+        if (credential?.user != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Welcome back!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            // Call the success callback if provided (not needed for Firebase auth wrapper)
+            widget.onLoginSuccess?.call();
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

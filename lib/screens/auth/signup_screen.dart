@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'login_screen.dart';
 import '../../services/auth_service.dart';
-import '../../services/web_auth_service.dart';
 import '../../services/user_manager.dart';
 import '../../services/user_registry.dart';
 
@@ -20,7 +19,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
-  final WebAuthService _webAuthService = WebAuthService();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _error;
@@ -86,8 +84,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
       } else {
         // Mobile mode - use Firebase authentication
-        // This will be implemented when Firebase is enabled
-        throw 'Mobile registration not yet implemented';
+        final credential = await _authService.signUpWithEmailAndPassword(email, password);
+        
+        if (credential?.user != null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Account created successfully! Please check your email for verification.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 4),
+              ),
+            );
+            
+            // Call the success callback if provided (not needed for Firebase auth wrapper)
+            widget.onSignUpSuccess?.call();
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

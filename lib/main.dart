@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 // Firebase imports (for Android)
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'firebase_options.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
 import 'services/web_auth_service.dart';
 import 'services/user_manager.dart';
 import 'screens/auth/login_screen.dart';
@@ -18,10 +18,10 @@ void main() async {
   if (kIsWeb) {
     WebAuthService.initialize();
   } else {
-    // For Android/iOS, initialize Firebase (uncomment when ready)
-    // await Firebase.initializeApp(
-    //   options: DefaultFirebaseOptions.currentPlatform,
-    // );
+    // For Android/iOS, initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
   
   runApp(UniversityRedditApp());
@@ -166,29 +166,41 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
 class FirebaseAuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // For now, just show the main navigation
-    // Later, when Firebase is working, use FirebaseAuth.instance.authStateChanges()
-    return LoginScreen();
-    
-    // Future Firebase implementation:
-    // return StreamBuilder<User?>(
-    //   stream: FirebaseAuth.instance.authStateChanges(),
-    //   builder: (context, snapshot) {
-    //     if (snapshot.connectionState == ConnectionState.waiting) {
-    //       return Scaffold(
-    //         body: Center(
-    //           child: CircularProgressIndicator(
-    //             color: Color(0xFF00BCD4),
-    //           ),
-    //         ),
-    //       );
-    //     }
-    //     if (snapshot.hasData) {
-    //       return MainNavigation();
-    //     } else {
-    //       return LoginScreen();
-    //     }
-    //   },
-    // );
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color(0xFF00BCD4),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      color: Color(0xFF00BCD4),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        if (snapshot.hasData) {
+          return MainNavigation(
+            onLogout: () async {
+              await FirebaseAuth.instance.signOut();
+            },
+          );
+        } else {
+          return LoginScreen();
+        }
+      },
+    );
   }
 } 
