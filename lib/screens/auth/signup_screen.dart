@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+// Removed unused import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Added Firebase Auth
 import 'login_screen.dart';
-import '../../services/auth_service.dart';
-import '../../services/web_auth_service.dart';
-import '../../services/user_manager.dart';
-import '../../services/user_registry.dart';
+// Removed import of auth_service, web_auth_service, user_manager, user_registry
+// since we are using Firebase Authentication directly now
 
 class SignUpScreen extends StatefulWidget {
   final VoidCallback? onSignUpSuccess;
-  
+
   const SignUpScreen({Key? key, this.onSignUpSuccess}) : super(key: key);
-  
+
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
 }
@@ -19,11 +18,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
-  final AuthService _authService = AuthService();
-  final WebAuthService _webAuthService = WebAuthService();
+
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _error;
+
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance; // Firebase Auth instance
 
   @override
   void dispose() {
@@ -33,6 +33,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  // Updated _signUp to use Firebase Authentication for all platforms
   void _signUp() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -42,52 +43,53 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _isLoading = true;
       _error = null;
     });
-    
+
     try {
-      // Simple validation for web testing
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
-      
-      // Simulate loading
-      await Future.delayed(Duration(milliseconds: 800));
-      
-      // Basic validation
-      if (email.isEmpty || !_isValidEmail(email)) {
-        throw 'Please enter a valid email address';
-      }
-      
-      if (password.length < 6) {
-        throw 'Password must be at least 6 characters long';
-      }
-      
-      if (kIsWeb) {
-        // Web testing mode - register in UserRegistry
-        if (UserRegistry.registerUser(email, password)) {
-          // Store user data
-          UserManager.setUser(
-            email: email,
-            emailVerified: false, // New accounts start unverified
+
+      // Firebase signup
+      UserCredential userCredential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      // Optionally, send email verification:
+      await userCredential.user?.sendEmailVerification();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Account created successfully! Please verify your email before login.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 4),
+          ),
+        );
+
+        // Call success callback if any
+        widget.onSignUpSuccess?.call();
+
+        // Navigate to LoginScreen after short delay to allow snackbar to show
+        Future.delayed(Duration(milliseconds: 500), () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => LoginScreen()),
           );
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Account created successfully!'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 4),
-              ),
-            );
-            
-            // Call the success callback
-            widget.onSignUpSuccess?.call();
-          }
-        } else {
-          throw 'An account with this email already exists. Please use a different email or try logging in.';
-        }
-      } else {
-        // Mobile mode - use Firebase authentication
-        // This will be implemented when Firebase is enabled
-        throw 'Mobile registration not yet implemented';
+        });
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle Firebase-specific errors
+      String message = 'Registration failed. Please try again.';
+      if (e.code == 'email-already-in-use') {
+        message = 'This email is already in use. Try logging in.';
+      } else if (e.code == 'invalid-email') {
+        message = 'The email address is not valid.';
+      } else if (e.code == 'weak-password') {
+        message = 'The password is too weak.';
+      }
+      if (mounted) {
+        setState(() {
+          _error = message;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -112,11 +114,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (password.length < 6) {
       return 'Password must be at least 6 characters long';
     }
-    if (kIsWeb) {
-      // Relaxed validation for web testing
-      return null;
-    }
-    // Strict validation for production
+    // Keep your current validation as is; you may want to adjust for Firebase rules
     if (!password.contains(RegExp(r'[A-Z]'))) {
       return 'Password must contain at least one uppercase letter';
     }
@@ -161,7 +159,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ],
                     ),
-                    
                     // Join Us text
                     Text(
                       'Join Us',
@@ -180,26 +177,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         color: Colors.white70,
                       ),
                     ),
-                    if (kIsWeb) ...[
-                      SizedBox(height: 16),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Web Testing Mode',
-                          style: TextStyle(
-                            color: Color(0xFF00BCD4),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
                     SizedBox(height: 40),
-                    
+
                     // Sign up form container
                     Container(
                       width: double.infinity,
@@ -246,7 +225,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          
+
                           // Password field
                           Container(
                             decoration: BoxDecoration(
@@ -271,7 +250,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          
+
                           // Confirm Password field
                           Container(
                             decoration: BoxDecoration(
@@ -299,40 +278,38 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                           ),
                           SizedBox(height: 20),
-                          
+
                           // Password requirements info
-                          if (!kIsWeb) ...[
-                            Container(
-                              padding: EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Color(0xFF00BCD4).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Password must contain:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF00BCD4),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '• At least 6 characters\n• One uppercase letter\n• One lowercase letter\n• One number',
-                                    style: TextStyle(
-                                      color: Color(0xFF00BCD4),
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Color(0xFF00BCD4).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            SizedBox(height: 20),
-                          ],
-                          
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Password must contain:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF00BCD4),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '• At least 6 characters\n• One uppercase letter\n• One lowercase letter\n• One number',
+                                  style: TextStyle(
+                                    color: Color(0xFF00BCD4),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20),
+
                           // Error message
                           if (_error != null) ...[
                             Container(
@@ -349,7 +326,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             SizedBox(height: 20),
                           ],
-                          
+
                           // Sign up button
                           Container(
                             height: 56,
@@ -365,35 +342,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               child: _isLoading
                                   ? SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Create Account',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Icon(Icons.arrow_forward, size: 20),
-                                      ],
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Create Account',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
                                     ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_forward, size: 20),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     SizedBox(height: 40),
-                    
+
                     // User login and Register buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -403,12 +380,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => SignUpScreen(
-                                    onSignUpSuccess: widget.onSignUpSuccess,
-                                  ),
-                                ),
+                              // Navigate to login screen
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(builder: (_) => LoginScreen()),
                               );
                             },
                             style: ElevatedButton.styleFrom(
@@ -433,9 +407,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           width: 120,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // Already on register screen
-                            },
+                            onPressed: null, // Disabled because already on register screen
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: Color(0xFF00BCD4),
@@ -464,4 +436,4 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
     );
   }
-} 
+}

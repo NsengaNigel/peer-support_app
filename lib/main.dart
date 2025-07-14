@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 // Firebase imports (for Android)
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'firebase_options.dart';
-import 'services/web_auth_service.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'firebase_options.dart';
+// import 'services/web_auth_service.dart';
 import 'services/user_manager.dart';
 import 'screens/auth/login_screen.dart';
 import 'navigation/app_router.dart';
@@ -16,14 +16,24 @@ void main() async {
   
   // For web testing, use WebAuthService
   if (kIsWeb) {
-    WebAuthService.initialize();
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBuo5IiMFJcW0zc1h2TqDHvbJp2XW7HnAE",
+        authDomain: "peer-support-app-2cf36.firebaseapp.com",
+        projectId: "peer-support-app-2cf36",
+        storageBucket: "peer-support-app-2cf36.appspot.com",
+        messagingSenderId: "159520444669",
+        appId: "1:159520444669:web:90af5cd56d2d53d9326e94",
+        measurementId: "G-C773M6XLEK",
+      ),
+    );
   } else {
-    // For Android/iOS, initialize Firebase (uncomment when ready)
-    // await Firebase.initializeApp(
-    //   options: DefaultFirebaseOptions.currentPlatform,
-    // );
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
-  
+
+
   runApp(UniversityRedditApp());
 }
 

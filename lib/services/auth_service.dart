@@ -1,29 +1,64 @@
-// Firebase Auth Service (for Android/iOS)
-// Commented out for web testing - uncomment when using on Android/iOS
+import 'package:firebase_auth/firebase_auth.dart';
 
-// import 'package:firebase_auth/firebase_auth.dart';
-
-// Placeholder AuthService for web compatibility
 class AuthService {
-  // This is a placeholder service for web testing
-  // When using on Android/iOS, uncomment the Firebase imports above
-  // and implement the real Firebase authentication methods
-  
-  dynamic get currentUser => null;
-  
-  Future<void> signUpWithEmailAndPassword(String email, String password) async {
-    throw 'Use WebAuthService for web testing';
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Register a new user with email and password
+  Future<UserCredential?> registerWithEmail(String email, String password) async {
+    try {
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        throw 'This email is already in use.';
+      } else if (e.code == 'invalid-email') {
+        throw 'The email address is not valid.';
+      } else if (e.code == 'weak-password') {
+        throw 'The password is too weak.';
+      } else {
+        throw 'Error: ${e.message}';
+      }
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
   }
-  
-  Future<void> signInWithEmailAndPassword(String email, String password) async {
-    throw 'Use WebAuthService for web testing';
-  }
-  
-  Future<void> signOut() async {
-    throw 'Use WebAuthService for web testing';
-  }
-  
+
+  /// Send a password reset email
   Future<void> sendPasswordResetEmail(String email) async {
-    throw 'Use WebAuthService for web testing';
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        throw 'No user found with this email.';
+      } else if (e.code == 'invalid-email') {
+        throw 'The email address is not valid.';
+      } else {
+        throw 'Failed to send password reset email: ${e.message}';
+      }
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
   }
-} 
+
+  /// (Optional for future use) Sign in user
+  Future<UserCredential?> signInWithEmail(String email, String password) async {
+    try {
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        throw 'Incorrect email or password.';
+      } else {
+        throw 'Login failed: ${e.message}';
+      }
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
+  }
+}
