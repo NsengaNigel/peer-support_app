@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-// Firebase imports (for Firestore chat only)
+// Firebase imports (for Authentication and Firestore chat)
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'services/web_auth_service.dart';
 import 'services/user_manager.dart';
 import 'screens/auth/login_screen.dart';
 import 'navigation/app_router.dart';
@@ -13,16 +13,26 @@ import 'navigation/main_navigation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase for Firestore chat functionality
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Initialize WebAuthService for temporary auth
+  // Initialize Firebase for Authentication and Firestore chat functionality
   if (kIsWeb) {
-    WebAuthService.initialize();
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBuo5IiMFJcW0zc1h2TqDHvbJp2XW7HnAE",
+        authDomain: "peer-support-app-2cf36.firebaseapp.com",
+        projectId: "peer-support-app-2cf36",
+        storageBucket: "peer-support-app-2cf36.appspot.com",
+        messagingSenderId: "159520444669",
+        appId: "1:159520444669:web:90af5cd56d2d53d9326e94",
+        measurementId: "G-C773M6XLEK",
+      ),
+    );
+  } else {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   }
-  
+
+
   runApp(UniversityRedditApp());
 }
 

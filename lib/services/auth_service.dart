@@ -1,50 +1,108 @@
-import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// AuthService placeholder - partner will implement authentication
 class AuthService {
-  // Placeholder methods for compatibility
-  dynamic get currentUser => null;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /// Get current user
+  User? get currentUser => _auth.currentUser;
   
-  // Placeholder stream
-  Stream<dynamic> get authStateChanges => Stream.value(null);
-  
-  // Placeholder - partner will implement authentication
-  Future<dynamic> signUpWithEmailAndPassword(String email, String password) async {
-    throw 'Authentication will be implemented by partner';
+  /// Stream of auth state changes
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  /// Register a new user with email and password
+  Future<UserCredential?> registerWithEmail(String email, String password) async {
+    try {
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        throw 'This email is already in use.';
+      } else if (e.code == 'invalid-email') {
+        throw 'The email address is not valid.';
+      } else if (e.code == 'weak-password') {
+        throw 'The password is too weak.';
+      } else {
+        throw 'Error: ${e.message}';
+      }
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
   }
-  
-  // Placeholder - partner will implement authentication
-  Future<dynamic> signInWithEmailAndPassword(String email, String password) async {
-    throw 'Authentication will be implemented by partner';
+
+  /// Sign in user with email and password
+  Future<UserCredential?> signInWithEmail(String email, String password) async {
+    try {
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        throw 'Incorrect email or password.';
+      } else {
+        throw 'Login failed: ${e.message}';
+      }
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
   }
-  
-  // Placeholder - partner will implement authentication
+
+  /// Sign out user
   Future<void> signOut() async {
-    throw 'Authentication will be implemented by partner';
+    await _auth.signOut();
   }
-  
-  // Placeholder - partner will implement authentication
+
+  /// Send a password reset email
   Future<void> sendPasswordResetEmail(String email) async {
-    throw 'Authentication will be implemented by partner';
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        throw 'No user found with this email.';
+      } else if (e.code == 'invalid-email') {
+        throw 'The email address is not valid.';
+      } else {
+        throw 'Failed to send password reset email: ${e.message}';
+      }
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
   }
-  
-  // Placeholder - partner will implement authentication
+
+  /// Send email verification
   Future<void> sendEmailVerification() async {
-    throw 'Authentication will be implemented by partner';
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
   }
-  
-  // Placeholder - partner will implement authentication
+
+  /// Reload user data
   Future<void> reloadUser() async {
-    throw 'Authentication will be implemented by partner';
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.reload();
+    }
   }
-  
-  // Placeholder - partner will implement authentication
+
+  /// Update user profile
   Future<void> updateProfile({String? displayName, String? photoURL}) async {
-    throw 'Authentication will be implemented by partner';
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.updateDisplayName(displayName);
+      await user.updatePhotoURL(photoURL);
+    }
   }
-  
-  // Placeholder - partner will implement authentication
+
+  /// Delete user account
   Future<void> deleteAccount() async {
-    throw 'Authentication will be implemented by partner';
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.delete();
+    }
   }
-} 
+}

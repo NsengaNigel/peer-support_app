@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../main.dart';
-import '../services/web_auth_service.dart';
+import '../services/auth_service.dart';
+// import '../services/web_auth_service.dart';
 import '../services/user_manager.dart';
 import 'app_router.dart';
 
 class AppDrawer extends StatelessWidget {
-  final WebAuthService _webAuthService = WebAuthService();
+  final AuthService _authService = AuthService();
+  // final WebAuthService _webAuthService = WebAuthService();
   final VoidCallback? onLogout;
 
   AppDrawer({Key? key, this.onLogout}) : super(key: key);
