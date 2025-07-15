@@ -114,7 +114,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (password.length < 6) {
       return 'Password must be at least 6 characters long';
     }
-    // Keep your current validation as is; you may want to adjust for Firebase rules
+
     if (!password.contains(RegExp(r'[A-Z]'))) {
       return 'Password must contain at least one uppercase letter';
     }
