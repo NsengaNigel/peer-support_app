@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../screens/home_screen.dart';
 import '../screens/communities_screen.dart';
 import '../screens/post/create_post_screen.dart';
-import '../screens/inbox_screen.dart';
+import '../screens/chat/chat_list_screen.dart';
 import '../screens/profile_screen.dart';
+import '../services/chat_service.dart';
 import 'app_drawer.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -18,12 +19,26 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
+  final ChatService _chatService = ChatService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeChatService();
+  }
+
+  void _initializeChatService() async {
+    // Initialize with a temporary user ID
+    // This will be replaced with actual user data from your partner's auth system
+    final tempUserId = 'temp_user_${DateTime.now().millisecondsSinceEpoch}';
+    await _chatService.initializeTempUser(tempUserId, 'Test User');
+  }
 
   List<Widget> get _screens => [
     HomeScreen(),
     CommunitiesScreen(),
     CreatePostScreen(),
-    InboxScreen(),
+    ChatListScreen(),
     ProfileScreen(onLogout: widget.onLogout),
   ];
 
@@ -44,9 +59,9 @@ class _MainNavigationState extends State<MainNavigation> {
       label: 'Create',
     ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.mail_outline),
-      activeIcon: Icon(Icons.mail),
-      label: 'Inbox',
+      icon: Icon(Icons.chat_bubble_outline),
+      activeIcon: Icon(Icons.chat_bubble),
+      label: 'Chat',
     ),
     BottomNavigationBarItem(
       icon: Icon(Icons.person_outline),

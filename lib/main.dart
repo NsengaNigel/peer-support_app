@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
-// Firebase imports (for Android)
+// Firebase imports (for Firestore chat only)
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'services/web_auth_service.dart';
 import 'services/user_manager.dart';
@@ -14,14 +13,14 @@ import 'navigation/main_navigation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // For web testing, use WebAuthService
+  // Initialize Firebase for Firestore chat functionality
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Initialize WebAuthService for temporary auth
   if (kIsWeb) {
     WebAuthService.initialize();
-  } else {
-    // For Android/iOS, initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
   }
   
   runApp(UniversityRedditApp());
@@ -84,7 +83,7 @@ class UniversityRedditApp extends StatelessWidget {
             scaffoldBackgroundColor: Colors.grey[900],
           ),
           themeMode: mode,
-          home: kIsWeb ? WebAuthWrapper() : FirebaseAuthWrapper(),
+          home: WebAuthWrapper(),
           onGenerateRoute: AppRouter.generateRoute,
         );
       },
@@ -100,7 +99,7 @@ class WebAuthWrapper extends StatefulWidget {
 
 class _WebAuthWrapperState extends State<WebAuthWrapper> {
   bool _isLoggedIn = false;
-  bool _isLoading = false;
+  bool _isLoading = true;
   
   @override
   void initState() {
@@ -108,12 +107,17 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
     _checkAuthState();
   }
   
-  void _checkAuthState() {
+  void _checkAuthState() async {
+    // Wait a bit to ensure Firebase is fully initialized
+    await Future.delayed(Duration(milliseconds: 100));
+    
     // Simple check - no user logged in initially
-    setState(() {
-      _isLoggedIn = false;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoggedIn = false;
+        _isLoading = false;
+      });
+    }
   }
   
   void _onLoginSuccess() {
@@ -162,45 +166,4 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
   }
 }
 
-// Firebase auth wrapper for production (Android/iOS)
-class FirebaseAuthWrapper extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: Color(0xFF00BCD4),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading...',
-                    style: TextStyle(
-                      color: Color(0xFF00BCD4),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        if (snapshot.hasData) {
-          return MainNavigation(
-            onLogout: () async {
-              await FirebaseAuth.instance.signOut();
-            },
-          );
-        } else {
-          return LoginScreen();
-        }
-      },
-    );
-  }
-} 
+// Firebase auth wrapper removed - partner will handle authentication 

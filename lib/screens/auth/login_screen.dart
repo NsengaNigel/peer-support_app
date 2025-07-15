@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'signup_screen.dart';
-import '../../services/auth_service.dart';
 import '../../services/web_auth_service.dart';
 import '../../services/user_manager.dart';
 import '../../services/user_registry.dart';
@@ -18,7 +17,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
   final WebAuthService _webAuthService = WebAuthService();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
@@ -45,49 +43,30 @@ class _LoginScreenState extends State<LoginScreen> {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
       
-      if (kIsWeb) {
-        // Web testing mode - check against UserRegistry
-        // Simulate loading
-        await Future.delayed(Duration(milliseconds: 800));
+      // Web testing mode - check against UserRegistry
+      // Simulate loading
+      await Future.delayed(Duration(milliseconds: 800));
+      
+      if (UserRegistry.authenticateUser(email, password)) {
+        // Store user data
+        UserManager.setUser(
+          email: email,
+          emailVerified: email == 'test@example.com', // Test email is "verified"
+        );
         
-        if (UserRegistry.authenticateUser(email, password)) {
-          // Store user data
-          UserManager.setUser(
-            email: email,
-            emailVerified: email == 'test@example.com', // Test email is "verified"
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Welcome back!'),
+              backgroundColor: Colors.green,
+            ),
           );
           
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Welcome back!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            
-            // Call the success callback
-            widget.onLoginSuccess?.call();
-          }
-        } else {
-          throw 'Invalid email or password. Please check your credentials.';
+          // Call the success callback
+          widget.onLoginSuccess?.call();
         }
       } else {
-        // Mobile mode - use Firebase authentication
-        final credential = await _authService.signInWithEmailAndPassword(email, password);
-        
-        if (credential?.user != null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Welcome back!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            
-            // Call the success callback if provided (not needed for Firebase auth wrapper)
-            widget.onLoginSuccess?.call();
-          }
-        }
+        throw 'Invalid email or password. Please check your credentials.';
       }
     } catch (e) {
       if (mounted) {
@@ -117,11 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      if (kIsWeb) {
-        await _webAuthService.sendPasswordResetEmail(email);
-      } else {
-        await _authService.sendPasswordResetEmail(email);
-      }
+      await _webAuthService.sendPasswordResetEmail(email);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

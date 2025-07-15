@@ -11,9 +11,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   timeago: ^3.6.0
-  # Firebase dependencies (uncomment for Android/iOS)
-  firebase_core: ^2.15.0
-  firebase_auth: ^4.7.2
+  # Firebase dependencies - Firestore for chat functionality only
+  firebase_core: ^3.15.1
+  cloud_firestore: ^5.6.11
 
 dev_dependencies:
   flutter_test:
