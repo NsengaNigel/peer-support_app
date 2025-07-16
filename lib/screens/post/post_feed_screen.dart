@@ -60,20 +60,33 @@ class PostFeedScreen extends StatelessWidget {
             itemCount: posts.length,
             itemBuilder: (context, index) {
               final post = posts[index];
+
+              // Ensure post contains communityId
+              final communityId = post['communityId'];
+              if (communityId == null) {
+                return const SizedBox(); // Skip this post if invalid
+              }
+
               return PostCard(
                 post: post,
                 onTap: () {
                   Navigator.pushNamed(
                     context,
                     '/post',
-                    arguments: {'postId': post['id']},
+                    arguments: {
+                      'postId': post['id'],
+                      'communityId': communityId,
+                    },
                   );
                 },
                 onCommentTap: () {
                   Navigator.pushNamed(
                     context,
                     '/post',
-                    arguments: {'postId': post['id']},
+                    arguments: {
+                      'postId': post['id'],
+                      'communityId': communityId,
+                    },
                   );
                 },
               );
@@ -89,10 +102,10 @@ class PostFeedScreen extends StatelessWidget {
               builder: (context) => const CreatePostScreen(),
             ),
           );
-          // No need to reload, ValueNotifier will update automatically
+          // ValueNotifier should auto-update
         },
         child: const Icon(Icons.add),
       ),
     );
   }
-} 
+}

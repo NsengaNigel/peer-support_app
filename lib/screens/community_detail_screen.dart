@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final String communityId;
@@ -10,26 +11,76 @@ class CommunityDetailScreen extends StatefulWidget {
 
 class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
   bool _joined = false;
+  String _communityName = '';
+  String _communityDescription = '';
+  List<Map<String, dynamic>> _posts = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommunityDetails();
+  }
+
+  Future<void> _loadCommunityDetails() async {
+    try {
+      final communityDoc = await FirebaseFirestore.instance
+          .collection('communities')
+          .doc(widget.communityId)
+          .get();
+
+      if (!communityDoc.exists) {
+        throw Exception('Community not found');
+      }
+
+      final communityData = communityDoc.data()!;
+
+      // 🔧 CHANGED: Fetch posts from flat 'posts' collection instead of nested under community
+      final postsSnapshot = await FirebaseFirestore.instance
+          .collection('posts')
+          .where('communityId', isEqualTo: widget.communityId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      setState(() {
+        _communityName = communityData['name'] ?? '';
+        _communityDescription = communityData['description'] ?? '';
+        _posts = postsSnapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'id': doc.id,
+            'title': data['title'] ?? '',
+            'content': data['content'] ?? '',
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading community: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Fictional community data
-    final communities = [
-      {'id': 'community_0', 'name': 'Programming', 'description': 'A place for programmers.', 'posts': ['How to learn Python?', 'Best IDEs in 2024']},
-      {'id': 'community_1', 'name': 'University Life', 'description': 'Share your campus stories.', 'posts': ['Dorm hacks', 'Best campus food']},
-      {'id': 'community_2', 'name': 'Book Club', 'description': 'Discuss your favorite books.', 'posts': ['Book of the month: 1984', 'Best fantasy novels']},
-      {'id': 'community_3', 'name': 'Sports Fans', 'description': 'All about sports!', 'posts': ['Champions League Final', 'Best running shoes']},
-      {'id': 'community_4', 'name': 'Music Lovers', 'description': 'For those who love music.', 'posts': ['Favorite albums', 'Best concerts attended']},
-    ];
-    final community = communities.firstWhere((c) => c['id'] == widget.communityId, orElse: () => communities[0]);
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(community['name'] as String)),
+      appBar: AppBar(title: Text(_communityName)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(community['description'] as String, style: const TextStyle(fontSize: 16)),
+            Text(_communityDescription, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 16),
             if (!_joined)
               Center(
@@ -43,22 +94,38 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
                 ),
               ),
             if (_joined) ...[
+              const SizedBox(height: 16),
               const Text('Posts:', style: TextStyle(fontWeight: FontWeight.bold)),
-              ...((community['posts'] as List).map((p) => ListTile(
-                    leading: const Icon(Icons.forum),
-                    title: Text(p),
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/post',
-                        arguments: {'postId': 'community_post_${community['id']}_${(community['posts'] as List).indexOf(p)}'},
-                      );
-                    },
-                  ))),
-            ]
+              if (_posts.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('No posts yet in this community.'),
+                ),
+              ..._posts.map(
+                    (post) => ListTile(
+                  leading: const Icon(Icons.forum),
+                  title: Text(post['title']),
+                  subtitle: Text(
+                    post['content'],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/post',
+                      arguments: {
+                        'postId': post['id'],
+                        // 🟨 Removed 'communityId' from arguments since it's no longer needed in PostDetailScreen
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
-} 
+}
