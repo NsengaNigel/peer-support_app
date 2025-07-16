@@ -1,50 +1,73 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/community.dart';
 
 class CommunityService {
-  // Mock communities for testing
-  static final List<Community> _mockCommunities = [
-    Community(
-      id: 'university',
-      name: 'University',
-      description: 'General university discussions and announcements',
-      memberCount: 1250,
-    ),
-    Community(
-      id: 'programming',
-      name: 'Programming',
-      description: 'Programming tips, tutorials, and discussions',
-      memberCount: 890,
-    ),
-    Community(
-      id: 'study_groups',
-      name: 'Study Groups',
-      description: 'Find and create study groups for your courses',
-      memberCount: 456,
-    ),
-    Community(
-      id: 'events',
-      name: 'Events',
-      description: 'Campus events and activities',
-      memberCount: 678,
-    ),
-    Community(
-      id: 'career',
-      name: 'Career',
-      description: 'Job opportunities and career advice',
-      memberCount: 334,
-    ),
-  ];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Get all available communities from Firestore
+  Future<List<Community>> getAllCommunities() async {
+    final snapshot = await _firestore.collection('communities').get();
+    return snapshot.docs
+        .map((doc) => Community.fromMap(doc.data(), doc.id))
+        .toList();
+  }
 
   // Get user's joined communities
-  Future<List<Community>> getUserCommunities() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    // Mock: user is part of first 3 communities
-    return _mockCommunities.take(3).toList();
+  Future<List<Community>> getUserCommunities({required String userId}) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+
+    final List<dynamic> joinedCommunityIds =
+        userDoc.data()?['joinedCommunities'] ?? [];
+
+    if (joinedCommunityIds.isEmpty) return [];
+
+    final snapshot = await _firestore
+        .collection('communities')
+        .where(FieldPath.documentId, whereIn: joinedCommunityIds)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Community.fromMap(doc.data(), doc.id))
+        .toList();
   }
 
-  // Get all available communities
-  Future<List<Community>> getAllCommunities() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return List.from(_mockCommunities);
+  // Create a new community
+  Future<Community> createCommunity({
+    required String name,
+    required String description,
+    required String userId,
+  }) async {
+    // Create new community doc with auto ID
+    final newCommunityRef = _firestore.collection('communities').doc();
+
+    final communityData = {
+      'name': name,
+      'description': description,
+      'creatorId': userId,
+      'createdAt': FieldValue.serverTimestamp(),
+      'memberCount': 1, // initial member count (creator)
+    };
+
+    // Save community to Firestore
+    await newCommunityRef.set(communityData);
+
+    // Reference to user doc
+    final userRef = _firestore.collection('users').doc(userId);
+    final userSnapshot = await userRef.get();
+
+    if (userSnapshot.exists) {
+      await userRef.update({
+        'joinedCommunities': FieldValue.arrayUnion([newCommunityRef.id]),
+      });
+    } else {
+      await userRef.set({
+        'joinedCommunities': [newCommunityRef.id],
+      });
+    }
+
+    // Fetch the created community data
+    final communitySnapshot = await newCommunityRef.get();
+
+    return Community.fromMap(communitySnapshot.data()!, communitySnapshot.id);
   }
-} 
+}

@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
-  const PostDetailScreen({Key? key, required this.postId}) : super(key: key);
+
+  const PostDetailScreen({
+    Key? key,
+    required this.postId,
+  }) : super(key: key);
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -10,7 +16,15 @@ class PostDetailScreen extends StatefulWidget {
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
-  final List<Map<String, String>> _comments = [];
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoading = true;
+  Map<String, dynamic>? _post;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPostAndComments();
+  }
 
   @override
   void dispose() {
@@ -18,61 +32,102 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     super.dispose();
   }
 
-  void _addComment() {
-    if (_commentController.text.trim().isNotEmpty) {
+  Future<void> _loadPostAndComments() async {
+    try {
+      final postDoc = await FirebaseFirestore.instance
+          .collection('posts')
+          .doc(widget.postId)
+          .get();
+
+      if (!postDoc.exists) {
+        throw Exception('Post not found');
+      }
+
+      final postData = postDoc.data()!;
+      final communityId = postData['communityId'];
+
+      final commentSnapshot = await FirebaseFirestore.instance
+          .collection('communities')
+          .doc(communityId)
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .orderBy('createdAt', descending: true)
+          .get();
+
       setState(() {
-        _comments.add({
-          'author': 'You',
-          'text': _commentController.text.trim(),
+        _post = postData;
+        _comments = commentSnapshot.docs.map((doc) {
+          final data = doc.data();
+          return {
+            'author': data['author'] ?? 'Anonymous',
+            'text': data['text'] ?? '',
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading post: $e')),
+      );
+    }
+  }
+
+  Future<void> _addComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    final author = user?.displayName ?? user?.email ?? 'Anonymous';
+    final communityId = _post?['communityId'];
+
+    try {
+      final newComment = {
+        'author': author,
+        'text': text,
+        'createdAt': FieldValue.serverTimestamp(),
+      };
+
+      await FirebaseFirestore.instance
+          .collection('communities')
+          .doc(communityId)
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .add(newComment);
+
+      setState(() {
+        _comments.insert(0, {
+          'author': author,
+          'text': text,
         });
       });
+
       _commentController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error adding comment: $e')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Fictional posts data
-    final posts = [
-      {
-        'id': 'post_0',
-        'title': 'Welcome to UniReddit!',
-        'author': 'Admin',
-        'body': 'This is the first post in the community. Feel free to share your thoughts!',
-        'comments': [
-          {'author': 'Alice', 'text': 'Excited to be here!'},
-          {'author': 'Bob', 'text': 'Looking forward to great discussions.'},
-        ],
-      },
-      {
-        'id': 'post_1',
-        'title': 'Study Tips for Finals',
-        'author': 'Student123',
-        'body': 'Here are some tips to ace your finals: stay organized, take breaks, and ask for help when needed.',
-        'comments': [
-          {'author': 'Charlie', 'text': 'Thanks for the tips!'},
-        ],
-      },
-      {
-        'id': 'post_2',
-        'title': 'Favorite Campus Spots',
-        'author': 'JaneDoe',
-        'body': 'What are your favorite places to relax on campus?',
-        'comments': [
-          {'author': 'Diana', 'text': 'I love the library garden.'},
-        ],
-      },
-    ];
-    final post = posts.firstWhere(
-      (p) => p['id'] == widget.postId,
-      orElse: () => posts[0],
-    );
-    
-    // Combine original comments with new comments
-    final allComments = [...(post['comments'] as List), ..._comments];
-    
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_post == null) {
+      return const Scaffold(
+        body: Center(child: Text('Post not found')),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: Text(post['title'] as String)),
+      appBar: AppBar(title: Text(_post!['title'] ?? 'Post')),
       body: Column(
         children: [
           Expanded(
@@ -81,20 +136,25 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('By ${post['author']}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('By ${_post!['authorUsername'] ?? 'Unknown User'}',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
-                  Text(post['body'] as String),
+                  Text(_post!['content'] ?? ''),
                   const SizedBox(height: 24),
-                  const Text('Comments:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Comments:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: allComments.length,
+                    child: _comments.isEmpty
+                        ? const Text('No comments yet.')
+                        : ListView.builder(
+                      itemCount: _comments.length,
                       itemBuilder: (context, index) {
-                        final comment = allComments[index];
+                        final comment = _comments[index];
                         return ListTile(
                           leading: const Icon(Icons.comment),
-                          title: Text((comment as Map)['author']),
-                          subtitle: Text((comment as Map)['text']),
+                          title: Text(comment['author']),
+                          subtitle: Text(comment['text']),
                         );
                       },
                     ),
@@ -132,4 +192,4 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       ),
     );
   }
-} 
+}
