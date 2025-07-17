@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>(); // For form validation
   bool _isLoading = false; // Tracks loading state to disable buttons and show spinner
   String? _error; // Holds error message to display to user
+  String _loadingMessage = 'Logging in...'; // Loading message to show user
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance; // Firebase Auth instance
 
@@ -38,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _loadingMessage = 'Authenticating...';
     });
 
     try {
@@ -49,6 +51,12 @@ class _LoginScreenState extends State<LoginScreen> {
         email: email,
         password: password,
       );
+
+      if (mounted) {
+        setState(() {
+          _loadingMessage = 'Initializing app...';
+        });
+      }
 
       // Check if email is verified
       if (userCredential.user != null && !userCredential.user!.emailVerified) {
@@ -332,13 +340,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                   elevation: 2,
                                 ),
                                 child: _isLoading
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Text(
+                                            _loadingMessage,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
                                       )
                                     : Text(
                                         'LOGIN',

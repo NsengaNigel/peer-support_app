@@ -25,44 +25,100 @@ class ChatService {
 
   // Initialize with Firebase Auth user
   Future<void> initializeWithFirebaseUser() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      // Create or update user in Firestore
-      final chatUser = ChatUser(
-        id: user.uid,
-        name: user.displayName ?? user.email?.split('@')[0] ?? 'Unknown',
-        email: user.email ?? '',
-        isOnline: true,
-        lastSeen: DateTime.now(),
-        createdAt: DateTime.now(),
-      );
-      await _usersCollection.doc(user.uid).set(chatUser.toMap());
-      
-      if (kDebugMode) {
-        print('Chat service initialized for Firebase user: ${user.uid} (${user.email})');
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        if (kDebugMode) {
+          print('Initializing chat service for Firebase user: ${user.uid} (${user.email})');
+        }
+        
+        // Create or update user in Firestore
+        final chatUser = ChatUser(
+          id: user.uid,
+          name: user.displayName ?? user.email?.split('@')[0] ?? 'Unknown',
+          email: user.email ?? '',
+          isOnline: true,
+          lastSeen: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
+        
+        // Add timeout to Firestore operation
+        await _usersCollection.doc(user.uid).set(chatUser.toMap()).timeout(
+          Duration(seconds: 8),
+          onTimeout: () {
+            if (kDebugMode) {
+              print('Warning: Firestore set operation timed out for user: ${user.uid}');
+            }
+            throw TimeoutException('Firestore operation timed out');
+          },
+        );
+        
+        if (kDebugMode) {
+          print('Chat service initialized successfully for Firebase user: ${user.uid} (${user.email})');
+        }
+      } else {
+        if (kDebugMode) {
+          print('No Firebase user found during chat service initialization');
+        }
       }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error initializing chat service with Firebase user: $e');
+      }
+      rethrow;
     }
   }
 
   // Sync all Firebase Auth users to chat users collection
   Future<void> syncFirebaseUsersToChat() async {
     try {
-      // Get all users from the main users collection (from posts/communities)
-      final usersSnapshot = await _firestore.collection('users').get();
+      if (kDebugMode) {
+        print('Starting Firebase users sync to chat...');
+      }
+      
+      // Get all users from the main users collection (from posts/communities) with timeout
+      final usersSnapshot = await _firestore.collection('users').get().timeout(
+        Duration(seconds: 8),
+        onTimeout: () {
+          if (kDebugMode) {
+            print('Warning: Users collection query timed out');
+          }
+          throw TimeoutException('Users collection query timed out');
+        },
+      );
+      
+      if (kDebugMode) {
+        print('Found ${usersSnapshot.docs.length} users to sync');
+      }
       
       for (final userDoc in usersSnapshot.docs) {
-        final userData = userDoc.data();
-        final chatUser = ChatUser(
-          id: userDoc.id,
-          name: userData['displayName'] ?? userData['email']?.split('@')[0] ?? 'Unknown',
-          email: userData['email'] ?? '',
-          isOnline: false, // Default to offline
-          lastSeen: DateTime.now(),
-          createdAt: DateTime.now(),
-        );
-        
-        // Update chat user document (merge to avoid overwriting)
-        await _usersCollection.doc(userDoc.id).set(chatUser.toMap(), SetOptions(merge: true));
+        try {
+          final userData = userDoc.data();
+          final chatUser = ChatUser(
+            id: userDoc.id,
+            name: userData['displayName'] ?? userData['email']?.split('@')[0] ?? 'Unknown',
+            email: userData['email'] ?? '',
+            isOnline: false, // Default to offline
+            lastSeen: DateTime.now(),
+            createdAt: DateTime.now(),
+          );
+          
+          // Update chat user document (merge to avoid overwriting) with timeout
+          await _usersCollection.doc(userDoc.id).set(chatUser.toMap(), SetOptions(merge: true)).timeout(
+            Duration(seconds: 5),
+            onTimeout: () {
+              if (kDebugMode) {
+                print('Warning: Chat user update timed out for user: ${userDoc.id}');
+              }
+              throw TimeoutException('Chat user update timed out');
+            },
+          );
+        } catch (e) {
+          if (kDebugMode) {
+            print('Error syncing individual user ${userDoc.id}: $e');
+          }
+          // Continue with other users even if one fails
+        }
       }
       
       if (kDebugMode) {
@@ -72,6 +128,7 @@ class ChatService {
       if (kDebugMode) {
         print('Error syncing users to chat: $e');
       }
+      rethrow;
     }
   }
 
