@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/comments_service.dart';
+import '../services/user_manager.dart';
+import '../models/comment.dart';
+import '../main.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -16,8 +20,10 @@ class PostDetailScreen extends StatefulWidget {
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
   final TextEditingController _commentController = TextEditingController();
-  List<Map<String, dynamic>> _comments = [];
+  final CommentsService _commentsService = CommentsService();
+  List<Comment> _comments = [];
   bool _isLoading = true;
+  bool _isSubmitting = false;
   Map<String, dynamic>? _post;
 
   @override
@@ -34,161 +40,383 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   Future<void> _loadPostAndComments() async {
     try {
-      final postDoc = await FirebaseFirestore.instance
-          .collection('posts')
-          .doc(widget.postId)
-          .get();
+      Map<String, dynamic>? postData;
+      
+      // First try to find the post in the local posts notifier
+      final localPosts = postsNotifier.value;
+      final localPost = localPosts.firstWhere(
+        (post) => post['id'] == widget.postId,
+        orElse: () => {},
+      );
+      
+      if (localPost.isNotEmpty) {
+        // Found in local posts
+        postData = localPost;
+      } else {
+        // Try to load from Firestore
+        final postDoc = await FirebaseFirestore.instance
+            .collection('posts')
+            .doc(widget.postId)
+            .get();
 
-      if (!postDoc.exists) {
-        throw Exception('Post not found');
+        if (postDoc.exists) {
+          postData = postDoc.data()!;
+        }
       }
 
-      final postData = postDoc.data()!;
-      final communityId = postData['communityId'];
+      if (postData == null) {
+        throw Exception('Post not found');
+      }
+      
+      // Load comments using the new comments service
+      final comments = await _commentsService.getCommentsForPost(widget.postId);
 
-      final commentSnapshot = await FirebaseFirestore.instance
-          .collection('communities')
-          .doc(communityId)
-          .collection('posts')
-          .doc(widget.postId)
-          .collection('comments')
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      setState(() {
-        _post = postData;
-        _comments = commentSnapshot.docs.map((doc) {
-          final data = doc.data();
-          return {
-            'author': data['author'] ?? 'Anonymous',
-            'text': data['text'] ?? '',
-          };
-        }).toList();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _post = postData;
+          _comments = comments;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading post: $e')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading post: $e')),
+        );
+      }
     }
   }
 
   Future<void> _addComment() async {
-    final text = _commentController.text.trim();
-    if (text.isEmpty) return;
+    final content = _commentController.text.trim();
+    if (content.isEmpty) return;
 
-    final user = FirebaseAuth.instance.currentUser;
-    final author = user?.displayName ?? user?.email ?? 'Anonymous';
-    final communityId = _post?['communityId'];
+    setState(() => _isSubmitting = true);
 
     try {
-      final newComment = {
-        'author': author,
-        'text': text,
-        'createdAt': FieldValue.serverTimestamp(),
-      };
+      final user = UserManager.currentUser;
+      if (user == null) {
+        throw Exception('You must be logged in to comment');
+      }
 
-      await FirebaseFirestore.instance
-          .collection('communities')
-          .doc(communityId)
-          .collection('posts')
-          .doc(widget.postId)
-          .collection('comments')
-          .add(newComment);
-
-      setState(() {
-        _comments.insert(0, {
-          'author': author,
-          'text': text,
-        });
-      });
+      await _commentsService.addComment(
+        postId: widget.postId,
+        content: content,
+        authorId: user.uid,
+        authorName: user.displayName ?? user.email.split('@')[0],
+      );
 
       _commentController.clear();
+      await _loadPostAndComments(); // Refresh comments
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comment added successfully!')),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error adding comment: $e')),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_post == null) {
-      return const Scaffold(
-        body: Center(child: Text('Post not found')),
-      );
-    }
-
     return Scaffold(
-      appBar: AppBar(title: Text(_post!['title'] ?? 'Post')),
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('By ${_post!['authorUsername'] ?? 'Unknown User'}',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Text(_post!['content'] ?? ''),
-                  const SizedBox(height: 24),
-                  const Text('Comments:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: _comments.isEmpty
-                        ? const Text('No comments yet.')
-                        : ListView.builder(
-                      itemCount: _comments.length,
-                      itemBuilder: (context, index) {
-                        final comment = _comments[index];
-                        return ListTile(
-                          leading: const Icon(Icons.comment),
-                          title: Text(comment['author']),
-                          subtitle: Text(comment['text']),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+      backgroundColor: Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: Color(0xFF00BCD4),
+        title: Text(_post?['title'] ?? 'Post'),
+        actions: [
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'save',
+                child: Row(
+                  children: [
+                    Icon(Icons.bookmark_outline, size: 16),
+                    SizedBox(width: 8),
+                    Text('Save Post'),
+                  ],
+                ),
               ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              border: Border(top: BorderSide(color: Colors.grey[300]!)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _commentController,
-                    decoration: const InputDecoration(
-                      hintText: 'Add a comment...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+              PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    Icon(Icons.share, size: 16),
+                    SizedBox(width: 8),
+                    Text('Share'),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addComment,
-                  child: const Text('Send'),
-                ),
-              ],
-            ),
+              ),
+            ],
+            onSelected: (value) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${value} functionality coming soon!')),
+              );
+            },
           ),
         ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _post == null
+              ? const Center(child: Text('Post not found'))
+              : Column(
+                  children: [
+                    // Post content
+                    Container(
+                      margin: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 5,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Post header
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Color(0xFF00BCD4),
+                                child: Text(
+                                  (_post!['authorUsername'] ?? _post!['author'] ?? 'U')[0].toUpperCase(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _post!['authorUsername'] ?? _post!['author'] ?? 'Unknown',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      'r/${_post!['communityName'] ?? 'general'}',
+                                      style: TextStyle(
+                                        color: Color(0xFF00BCD4),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          // Post title
+                          Text(
+                            _post!['title'] ?? 'No Title',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 12),
+                          // Post content
+                          Text(
+                            _post!['content'] ?? _post!['body'] ?? 'No Content',
+                            style: TextStyle(
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          // Post stats
+                          Row(
+                            children: [
+                              Icon(Icons.comment, size: 16, color: Colors.grey[600]),
+                              SizedBox(width: 4),
+                              Text(
+                                '${_comments.length} comments',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Comments section
+                    Expanded(
+                      child: _comments.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.comment_outlined,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No comments yet',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Be the first to comment!',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _comments.length,
+                              itemBuilder: (context, index) {
+                                final comment = _comments[index];
+                                return Container(
+                                  margin: EdgeInsets.only(bottom: 12),
+                                  padding: EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 5,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor: Colors.orange,
+                                            child: Text(
+                                              comment.authorName[0].toUpperCase(),
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  comment.authorName,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '${DateTime.now().difference(comment.createdAt).inHours}h ago',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        comment.content,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+      // Comment input
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _commentController,
+                  decoration: InputDecoration(
+                    hintText: 'Add a comment...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: BorderSide(color: Color(0xFF00BCD4)),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  maxLines: null,
+                  textCapitalization: TextCapitalization.sentences,
+                ),
+              ),
+              SizedBox(width: 12),
+              _isSubmitting
+                  ? CircularProgressIndicator(
+                      color: Color(0xFF00BCD4),
+                    )
+                  : IconButton(
+                      onPressed: _addComment,
+                      icon: Icon(
+                        Icons.send,
+                        color: Color(0xFF00BCD4),
+                      ),
+                    ),
+            ],
+          ),
+        ),
       ),
     );
   }

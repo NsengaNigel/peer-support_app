@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'services/user_manager.dart';
+import 'services/chat_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'navigation/app_router.dart';
 import 'navigation/main_navigation.dart';
@@ -32,6 +33,9 @@ void main() async {
     );
   }
 
+  // Initialize chat service and sync users
+  final chatService = ChatService();
+  await chatService.syncFirebaseUsersToChat();
 
   runApp(UniversityRedditApp());
 }
@@ -121,22 +125,45 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
     // Wait a bit to ensure Firebase is fully initialized
     await Future.delayed(Duration(milliseconds: 100));
     
-    // Simple check - no user logged in initially
-    if (mounted) {
-      setState(() {
-        _isLoggedIn = false;
-        _isLoading = false;
-      });
+    // Check if user is already logged in with Firebase Auth
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // User is logged in, sync with UserManager and ChatService
+      UserManager.setFirebaseUser(user);
+      await ChatService().initializeWithFirebaseUser();
+      
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = true;
+          _isLoading = false;
+        });
+      }
+    } else {
+      // No user logged in
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = false;
+          _isLoading = false;
+        });
+      }
     }
   }
   
-  void _onLoginSuccess() {
+  void _onLoginSuccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Initialize chat service with Firebase user
+      await ChatService().initializeWithFirebaseUser();
+      UserManager.setFirebaseUser(user);
+    }
+    
     setState(() {
       _isLoggedIn = true;
     });
   }
   
-  void _onLogout() {
+  void _onLogout() async {
+    await FirebaseAuth.instance.signOut();
     UserManager.clearUser();
     setState(() {
       _isLoggedIn = false;

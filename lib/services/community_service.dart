@@ -70,4 +70,56 @@ class CommunityService {
 
     return Community.fromMap(communitySnapshot.data()!, communitySnapshot.id);
   }
+
+  // Join a community
+  Future<void> joinCommunity({
+    required String communityId,
+    required String userId,
+  }) async {
+    final batch = _firestore.batch();
+
+    // Add user to community members
+    final userRef = _firestore.collection('users').doc(userId);
+    final userSnapshot = await userRef.get();
+
+    if (userSnapshot.exists) {
+      batch.update(userRef, {
+        'joinedCommunities': FieldValue.arrayUnion([communityId]),
+      });
+    } else {
+      batch.set(userRef, {
+        'joinedCommunities': [communityId],
+      });
+    }
+
+    // Increment community member count
+    final communityRef = _firestore.collection('communities').doc(communityId);
+    batch.update(communityRef, {
+      'memberCount': FieldValue.increment(1),
+    });
+
+    await batch.commit();
+  }
+
+  // Leave a community
+  Future<void> leaveCommunity({
+    required String communityId,
+    required String userId,
+  }) async {
+    final batch = _firestore.batch();
+
+    // Remove user from community members
+    final userRef = _firestore.collection('users').doc(userId);
+    batch.update(userRef, {
+      'joinedCommunities': FieldValue.arrayRemove([communityId]),
+    });
+
+    // Decrement community member count
+    final communityRef = _firestore.collection('communities').doc(communityId);
+    batch.update(communityRef, {
+      'memberCount': FieldValue.increment(-1),
+    });
+
+    await batch.commit();
+  }
 }

@@ -48,21 +48,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        setState(() {
-          _communities = [];
-          _isLoadingCommunities = false;
-        });
+        if (mounted) {
+          setState(() {
+            _communities = [];
+            _isLoadingCommunities = false;
+          });
+        }
         return;
       }
       final communities = await _communityService.getUserCommunities(userId: user.uid);
-      setState(() {
-        _communities = communities;
-        _isLoadingCommunities = false;
-      });
+      if (mounted) {
+        setState(() {
+          _communities = communities;
+          _isLoadingCommunities = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingCommunities = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingCommunities = false;
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

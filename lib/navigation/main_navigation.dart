@@ -28,10 +28,8 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   void _initializeChatService() async {
-    // Initialize with a temporary user ID
-    // This will be replaced with actual user data from your partner's auth system
-    final tempUserId = 'temp_user_${DateTime.now().millisecondsSinceEpoch}';
-    await _chatService.initializeTempUser(tempUserId, 'Test User');
+    // Initialize with Firebase Auth user
+    await _chatService.initializeWithFirebaseUser();
   }
 
   List<Widget> get _screens => [

@@ -8,6 +8,7 @@ import '../screens/about_screen.dart';
 import '../screens/post_detail_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/community_detail_screen.dart';
+import '../screens/search_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -30,16 +31,32 @@ class AppRouter {
       case '/about':
         return MaterialPageRoute(builder: (_) => AboutScreen());
 
+      case '/search':
+        return MaterialPageRoute(builder: (_) => SearchScreen());
+
       case '/post':
         final args = settings.arguments as Map<String, dynamic>?;
-        // 🔧 CHANGED: Removed unnecessary `communityId` since PostDetailScreen now only needs `postId`
         return MaterialPageRoute(
           builder: (_) => PostDetailScreen(
             postId: args?['postId'] ?? '',
           ),
         );
 
+      case '/post_detail':
+        final postId = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          builder: (_) => PostDetailScreen(postId: postId),
+        );
+
       case '/user':
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => UserProfileScreen(
+            userId: args?['userId'] ?? '',
+          ),
+        );
+
+      case '/user_profile':
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => UserProfileScreen(
@@ -52,6 +69,26 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => CommunityDetailScreen(
             communityId: args?['communityId'] ?? '',
+          ),
+        );
+
+      case '/community_detail':
+        final communityId = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          builder: (_) => CommunityDetailScreen(communityId: communityId),
+        );
+
+      case '/chat':
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(
+              title: Text('Chat with ${args?['receiverName'] ?? 'User'}'),
+              backgroundColor: Color(0xFF00BCD4),
+            ),
+            body: Center(
+              child: Text('Chat functionality coming soon!\nReceiver: ${args?['receiverName'] ?? 'Unknown'}'),
+            ),
           ),
         );
 

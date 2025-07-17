@@ -5,12 +5,16 @@ class PostCard extends StatelessWidget {
   final Map<String, dynamic> post;
   final VoidCallback? onTap;
   final VoidCallback? onCommentTap;
+  final VoidCallback? onCommunityTap;
+  final VoidCallback? onUserTap;
 
   const PostCard({
     Key? key,
     required this.post,
     this.onTap,
     this.onCommentTap,
+    this.onCommunityTap,
+    this.onUserTap,
   }) : super(key: key);
 
   @override
@@ -37,17 +41,20 @@ class PostCard extends StatelessWidget {
               // Community and author info
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: Text(
-                      communityName.isNotEmpty 
-                          ? communityName[0].toUpperCase()
-                          : 'C',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  GestureDetector(
+                    onTap: onCommunityTap,
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Text(
+                        communityName.isNotEmpty 
+                            ? communityName[0].toUpperCase()
+                            : 'C',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -56,20 +63,38 @@ class PostCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'r/$communityName',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: Theme.of(context).primaryColor,
+                        GestureDetector(
+                          onTap: onCommunityTap,
+                          child: Text(
+                            'r/$communityName',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Theme.of(context).primaryColor,
+                            ),
                           ),
                         ),
-                        Text(
-                          'u/$authorUsername • ${timeago.format(createdAt)}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: onUserTap,
+                              child: Text(
+                                'u/$authorUsername',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              ' • ${timeago.format(createdAt)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

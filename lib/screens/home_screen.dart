@@ -1,9 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../main.dart';
 import '../widgets/post_card.dart';
+import 'post/post_feed_screen.dart';
+import 'post/create_post_screen.dart';
+import 'post_detail_screen.dart';
+import 'user_profile_screen.dart';
+import 'community_detail_screen.dart';
+import 'search_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<Map<String, dynamic>> _posts = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts() async {
+    try {
+      // Load posts from Firestore
+      final postsQuery = await FirebaseFirestore.instance
+          .collection('posts')
+          .limit(10) // Limit to 10 posts for home screen
+          .get();
+
+      // Convert to list and sort manually
+      final posts = postsQuery.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          ...data,
+        };
+      }).toList();
+
+      // Sort by creation date (newest first)
+      posts.sort((a, b) {
+        final aCreatedAt = a['createdAt'];
+        final bCreatedAt = b['createdAt'];
+        
+        DateTime? aDateTime;
+        DateTime? bDateTime;
+        
+        // Handle both Timestamp and String formats
+        if (aCreatedAt is Timestamp) {
+          aDateTime = aCreatedAt.toDate();
+        } else if (aCreatedAt is String) {
+          aDateTime = DateTime.tryParse(aCreatedAt);
+        }
+        
+        if (bCreatedAt is Timestamp) {
+          bDateTime = bCreatedAt.toDate();
+        } else if (bCreatedAt is String) {
+          bDateTime = DateTime.tryParse(bCreatedAt);
+        }
+        
+        if (aDateTime == null || bDateTime == null) return 0;
+        return bDateTime.compareTo(aDateTime);
+      });
+
+      // Add dummy posts if no real posts exist
+      if (posts.isEmpty) {
+        posts.addAll(postsNotifier.value);
+      }
+
+      if (mounted) {
+        setState(() {
+          _posts = posts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading posts: $e');
+      // Fallback to dummy posts
+      if (mounted) {
+        setState(() {
+          _posts = postsNotifier.value;
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,9 +122,19 @@ class HomeScreen extends StatelessWidget {
             margin: EdgeInsets.only(right: 16),
             child: CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(
-                Icons.search,
-                color: Color(0xFF00BCD4),
+              child: IconButton(
+                icon: Icon(
+                  Icons.search,
+                  color: Color(0xFF00BCD4),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SearchScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -46,11 +142,17 @@ class HomeScreen extends StatelessWidget {
             margin: EdgeInsets.only(right: 16),
             child: CircleAvatar(
               backgroundColor: Colors.orange,
-              child: Text(
-                'U',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+              child: InkWell(
+                onTap: () {
+                  // Navigate to current user's profile
+                  Navigator.pushNamed(context, '/profile');
+                },
+                child: Text(
+                  'U',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -75,7 +177,15 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigate to post feed screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PostFeedScreen(),
+                      ),
+                    );
+                  },
                   child: Text(
                     'See all',
                     style: TextStyle(
@@ -90,200 +200,126 @@ class HomeScreen extends StatelessWidget {
           
           // Posts List
           Expanded(
-            child: ValueListenableBuilder<List<Map<String, dynamic>>>(
-              valueListenable: postsNotifier,
-              builder: (context, posts, _) {
-                if (posts.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.post_add,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'No posts yet',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Be the first to share something!',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                
-                return ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
-                    final post = posts[index];
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _posts.isEmpty
+                    ? Center(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Post header with avatar and username
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.orange,
-                                  radius: 20,
-                                  child: Text(
-                                    post['author'][0].toUpperCase(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post['author'],
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      Text(
-                                        '2 hours ago',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.more_horiz,
-                                  color: Colors.grey[400],
-                                ),
-                              ],
+                            Icon(
+                              Icons.post_add,
+                              size: 64,
+                              color: Colors.grey[400],
                             ),
-                            SizedBox(height: 12),
-                            
-                            // Post title
-                            Text(
-                              post['title'],
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No posts yet',
+                              style: TextStyle(fontSize: 18, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Be the first to share something!',
+                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const CreatePostScreen(),
+                                  ),
+                                );
+                                // Reload posts after creating a new one
+                                if (result == true) {
+                                  _loadPosts();
+                                }
+                              },
+                              icon: Icon(Icons.add),
+                              label: Text('Create First Post'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF00BCD4),
+                                foregroundColor: Colors.white,
                               ),
-                            ),
-                            SizedBox(height: 8),
-                            
-                            // Post body
-                            Text(
-                              post['body'],
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                                height: 1.4,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            
-                            // Post actions
-                            Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF00BCD4).withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.favorite_border,
-                                        size: 16,
-                                        color: Color(0xFF00BCD4),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '${(index + 1) * 3}',
-                                        style: TextStyle(
-                                          color: Color(0xFF00BCD4),
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.comment_outlined,
-                                        size: 16,
-                                        color: Colors.grey[600],
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '${post['comments'].length}',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Spacer(),
-                                Icon(
-                                  Icons.share_outlined,
-                                  color: Colors.grey[600],
-                                  size: 20,
-                                ),
-                              ],
                             ),
                           ],
                         ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadPosts,
+                        child: ListView.builder(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _posts.length,
+                          itemBuilder: (context, index) {
+                            final post = _posts[index];
+                            return PostCard(
+                              post: post,
+                              onTap: () {
+                                // Navigate to post detail screen
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PostDetailScreen(
+                                      postId: post['id'] ?? 'unknown',
+                                    ),
+                                  ),
+                                );
+                              },
+                              onCommentTap: () {
+                                // Navigate to post detail screen focused on comments
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PostDetailScreen(
+                                      postId: post['id'] ?? 'unknown',
+                                    ),
+                                  ),
+                                );
+                              },
+                              onCommunityTap: () {
+                                // Navigate to community detail screen
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CommunityDetailScreen(
+                                      communityId: post['communityId'] ?? 'unknown',
+                                    ),
+                                  ),
+                                );
+                              },
+                              onUserTap: () {
+                                // Navigate to user profile screen
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => UserProfileScreen(
+                                      userId: post['authorId'] ?? 'unknown',
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    );
-                  },
-                );
-              },
-            ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Navigate to create post
+        onPressed: () async {
+          // Navigate to create post screen
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreatePostScreen(),
+            ),
+          );
+          // Reload posts after creating a new one
+          if (result == true) {
+            _loadPosts();
+          }
         },
         backgroundColor: Color(0xFF00BCD4),
         child: Icon(Icons.add, color: Colors.white),

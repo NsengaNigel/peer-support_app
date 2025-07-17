@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
 import '../models/chat_user.dart';
+import '../services/user_manager.dart';
 
 class ChatService {
   static final ChatService _instance = ChatService._internal();
@@ -11,26 +13,76 @@ class ChatService {
   ChatService._internal();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Collections
   CollectionReference get _messagesCollection => _firestore.collection('messages');
   CollectionReference get _conversationsCollection => _firestore.collection('conversations');
   CollectionReference get _usersCollection => _firestore.collection('chat_users');
 
-  // Current user ID (temporary - will be replaced with actual auth)
-  String? _currentUserId;
-  String? get currentUserId => _currentUserId;
+  // Current user ID from Firebase Auth
+  String? get currentUserId => _auth.currentUser?.uid;
 
-  // Initialize with temporary user
+  // Initialize with Firebase Auth user
+  Future<void> initializeWithFirebaseUser() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      // Create or update user in Firestore
+      final chatUser = ChatUser(
+        id: user.uid,
+        name: user.displayName ?? user.email?.split('@')[0] ?? 'Unknown',
+        email: user.email ?? '',
+        isOnline: true,
+        lastSeen: DateTime.now(),
+        createdAt: DateTime.now(),
+      );
+      await _usersCollection.doc(user.uid).set(chatUser.toMap());
+      
+      if (kDebugMode) {
+        print('Chat service initialized for Firebase user: ${user.uid} (${user.email})');
+      }
+    }
+  }
+
+  // Sync all Firebase Auth users to chat users collection
+  Future<void> syncFirebaseUsersToChat() async {
+    try {
+      // Get all users from the main users collection (from posts/communities)
+      final usersSnapshot = await _firestore.collection('users').get();
+      
+      for (final userDoc in usersSnapshot.docs) {
+        final userData = userDoc.data();
+        final chatUser = ChatUser(
+          id: userDoc.id,
+          name: userData['displayName'] ?? userData['email']?.split('@')[0] ?? 'Unknown',
+          email: userData['email'] ?? '',
+          isOnline: false, // Default to offline
+          lastSeen: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
+        
+        // Update chat user document (merge to avoid overwriting)
+        await _usersCollection.doc(userDoc.id).set(chatUser.toMap(), SetOptions(merge: true));
+      }
+      
+      if (kDebugMode) {
+        print('Synced ${usersSnapshot.docs.length} users to chat collection');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error syncing users to chat: $e');
+      }
+    }
+  }
+
+  // Initialize with temporary user (for backward compatibility)
   Future<void> initializeTempUser(String userId, String name) async {
-    _currentUserId = userId;
-    
     // Create or update user in Firestore
     final user = ChatUser.createTempUser(userId, name);
     await _usersCollection.doc(userId).set(user.toMap());
     
     if (kDebugMode) {
-      print('Chat service initialized for user: $userId ($name)');
+      print('Chat service initialized for temp user: $userId ($name)');
     }
   }
 
@@ -40,25 +92,26 @@ class ChatService {
     required String content,
     MessageType type = MessageType.text,
   }) async {
-    if (_currentUserId == null) {
-      throw Exception('User not initialized. Call initializeTempUser first.');
+    final senderId = currentUserId;
+    if (senderId == null) {
+      throw Exception('User not logged in. Please log in first.');
     }
 
     try {
       // Get sender info
-      final senderDoc = await _usersCollection.doc(_currentUserId).get();
+      final senderDoc = await _usersCollection.doc(senderId).get();
       final senderName = senderDoc.exists 
           ? (senderDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown'
           : 'Unknown';
 
       // Create conversation ID
-      final conversationId = ChatConversation.createConversationId(_currentUserId!, receiverId);
+      final conversationId = ChatConversation.createConversationId(senderId, receiverId);
 
       // Create message
       final messageId = _messagesCollection.doc().id;
       final message = ChatMessage(
         id: messageId,
-        senderId: _currentUserId!,
+        senderId: senderId,
         senderName: senderName,
         receiverId: receiverId,
         conversationId: conversationId,
@@ -73,9 +126,9 @@ class ChatService {
       // Update or create conversation
       await _updateConversation(
         conversationId: conversationId,
-        participants: [_currentUserId!, receiverId],
+        participants: [senderId, receiverId],
         lastMessage: content,
-        lastMessageSenderId: _currentUserId!,
+        lastMessageSenderId: senderId,
         lastMessageTimestamp: message.timestamp,
       );
 
@@ -92,37 +145,45 @@ class ChatService {
 
   // Get messages for a conversation with real-time updates
   Stream<List<ChatMessage>> getMessagesStream(String otherUserId) {
-    if (_currentUserId == null) {
+    final currentUser = currentUserId;
+    if (currentUser == null) {
       return Stream.value([]);
     }
 
-    final conversationId = ChatConversation.createConversationId(_currentUserId!, otherUserId);
+    final conversationId = ChatConversation.createConversationId(currentUser, otherUserId);
     
     return _messagesCollection
         .where('conversationId', isEqualTo: conversationId)
-        .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
+          final messages = snapshot.docs.map((doc) {
             return ChatMessage.fromSnapshot(doc);
           }).toList();
+          
+          // Sort in memory to avoid composite index requirement
+          messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          return messages;
         });
   }
 
   // Get user's conversations with real-time updates
   Stream<List<ChatConversation>> getConversationsStream() {
-    if (_currentUserId == null) {
+    final currentUser = currentUserId;
+    if (currentUser == null) {
       return Stream.value([]);
     }
 
     return _conversationsCollection
-        .where('participants', arrayContains: _currentUserId)
-        .orderBy('updatedAt', descending: true)
+        .where('participants', arrayContains: currentUser)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
+          final conversations = snapshot.docs.map((doc) {
             return ChatConversation.fromSnapshot(doc);
           }).toList();
+          
+          // Sort in memory to avoid composite index requirement
+          conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+          return conversations;
         });
   }
 
@@ -153,7 +214,7 @@ class ChatService {
 
       for (final doc in [...nameQuery.docs, ...emailQuery.docs]) {
         final user = ChatUser.fromSnapshot(doc);
-        if (!seenIds.contains(user.id) && user.id != _currentUserId) {
+        if (!seenIds.contains(user.id) && user.id != currentUserId) {
           users.add(user);
           seenIds.add(user.id);
         }
@@ -183,15 +244,16 @@ class ChatService {
 
   // Mark messages as read (privacy-focused - only updates unread count)
   Future<void> markMessagesAsRead(String otherUserId) async {
-    if (_currentUserId == null) return;
+    final currentUser = currentUserId;
+    if (currentUser == null) return;
 
     try {
-      final conversationId = ChatConversation.createConversationId(_currentUserId!, otherUserId);
+      final conversationId = ChatConversation.createConversationId(currentUser, otherUserId);
       
       // Only update conversation unread count for privacy
       // We don't track individual message read status
       await _conversationsCollection.doc(conversationId).update({
-        'unreadCounts.$_currentUserId': 0,
+        'unreadCounts.$currentUser': 0,
       });
 
       if (kDebugMode) {
