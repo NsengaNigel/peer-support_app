@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/community_service.dart';
 import '../services/user_manager.dart';
+import '../services/history_service.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final String communityId;
@@ -20,11 +21,14 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
   bool _isLoading = true;
   bool _isJoining = false;
   final CommunityService _communityService = CommunityService();
+  final HistoryService _historyService = HistoryService();
 
   @override
   void initState() {
     super.initState();
     _loadCommunityDetails();
+    // Track community visit for history
+    _historyService.visitCommunity(widget.communityId);
   }
 
   Future<void> _loadCommunityDetails() async {

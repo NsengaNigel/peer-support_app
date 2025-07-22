@@ -233,6 +233,10 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
               ),
             );
           },
+          onPostDeleted: () {
+            // Refresh search results when admin deletes a post
+            _performSearch(_searchQuery);
+          },
         );
       },
     );
@@ -318,7 +322,9 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
               user['displayName'] ?? 'No Name',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(user['email'] ?? 'No Email'),
+            subtitle: isCurrentUser 
+              ? Text(user['email'] ?? 'No Email')
+              : Text('Peer Support Member'), // Hide email from other users
             trailing: isCurrentUser 
               ? Text('You', style: TextStyle(color: Colors.grey))
               : Icon(Icons.arrow_forward_ios),

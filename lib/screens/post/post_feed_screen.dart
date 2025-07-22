@@ -167,6 +167,10 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
                             arguments: post['id'],
                           );
                         },
+                        onPostDeleted: () {
+                          // Refresh posts when admin deletes a post
+                          _loadPosts();
+                        },
                       );
                     },
                   ),

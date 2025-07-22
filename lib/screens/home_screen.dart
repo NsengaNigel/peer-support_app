@@ -93,73 +93,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        backgroundColor: Color(0xFF00BCD4),
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'peer support',
-                style: TextStyle(
-                  color: Color(0xFF00BCD4),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: Colors.white,
-              child: IconButton(
-                icon: Icon(
-                  Icons.search,
-                  color: Color(0xFF00BCD4),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SearchScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: Colors.orange,
-              child: InkWell(
-                onTap: () {
-                  // Navigate to current user's profile
-                  Navigator.pushNamed(context, '/profile');
-                },
-                child: Text(
-                  'U',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
+    return Container(
+      color: Color(0xFFF5F7FA),
+      child: Column(
         children: [
           // Latest Posts Header
           Container(
@@ -262,18 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => PostDetailScreen(
-                                      postId: post['id'] ?? 'unknown',
-                                    ),
-                                  ),
-                                );
-                              },
-                              onCommentTap: () {
-                                // Navigate to post detail screen focused on comments
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PostDetailScreen(
-                                      postId: post['id'] ?? 'unknown',
+                                      postId: post['id'] ?? '',
                                     ),
                                   ),
                                 );
@@ -300,29 +225,16 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 );
                               },
+                              onPostDeleted: () {
+                                // Refresh posts when admin deletes a post
+                                _loadPosts();
+                              },
                             );
                           },
                         ),
                       ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Navigate to create post screen
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreatePostScreen(),
-            ),
-          );
-          // Reload posts after creating a new one
-          if (result == true) {
-            _loadPosts();
-          }
-        },
-        backgroundColor: Color(0xFF00BCD4),
-        child: Icon(Icons.add, color: Colors.white),
       ),
     );
   }

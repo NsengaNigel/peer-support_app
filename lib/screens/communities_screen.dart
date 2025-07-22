@@ -3,6 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/community.dart';
 import '../services/community_service.dart';
+import '../services/user_manager.dart';
+import '../models/user_model.dart';
+import '../widgets/admin_actions.dart';
 
 class CommunitiesScreen extends StatefulWidget {
   const CommunitiesScreen({Key? key}) : super(key: key);
@@ -235,11 +238,27 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> with SingleTicker
             ),
           ),
         ),
-        title: Text(
-          community.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                community.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            // Admin actions for super admins
+            if (UserManager.currentUserModel?.isSuperAdmin == true)
+              AdminCommunityActions(
+                communityId: community.id,
+                communityName: community.name,
+                onDeleted: () {
+                  // Refresh communities list when community is deleted
+                  _loadCommunities();
+                },
+              ),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

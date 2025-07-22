@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/comments_service.dart';
 import '../services/user_manager.dart';
 import '../models/comment.dart';
+import '../widgets/admin_actions.dart';
 import '../main.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -222,6 +223,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   ],
                                 ),
                               ),
+                              // Admin actions for post
+                              AdminPostActions(
+                                postId: widget.postId,
+                                authorId: _post!['authorId'] ?? '',
+                                onDeleted: () {
+                                  Navigator.of(context).pop();
+                                },
+                              ),
                             ],
                           ),
                           SizedBox(height: 16),
@@ -348,6 +357,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                                 ),
                                               ],
                                             ),
+                                          ),
+                                          // Admin actions for comment
+                                          AdminCommentActions(
+                                            commentId: comment.id,
+                                            postId: widget.postId,
+                                            authorId: comment.authorId,
+                                            onDeleted: () {
+                                              _loadPostAndComments();
+                                            },
                                           ),
                                         ],
                                       ),

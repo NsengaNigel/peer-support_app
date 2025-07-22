@@ -55,6 +55,10 @@ void main() async {
     print('Debug: Skipping chat service initialization');
   }
 
+  // Initialize super admin (run once) - Change this email to your admin email
+  // Uncomment and change the email below to create your first super admin
+  // await UserManager.initializeSuperAdmin('donlechero5@yahoo.com');
+
   runApp(UniversityRedditApp());
 }
 
@@ -148,7 +152,7 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         // User is logged in, sync with UserManager and ChatService
-        UserManager.setFirebaseUser(user);
+        await UserManager.setFirebaseUser(user);
         
         // Skip chat service initialization in debug mode if needed
         const bool SKIP_CHAT_INIT = true; // Set to true to skip chat initialization
@@ -198,7 +202,7 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
   void _onLoginSuccess() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      UserManager.setFirebaseUser(user);
+      await UserManager.setFirebaseUser(user);
       
       // Skip chat service initialization in debug mode if needed
       const bool SKIP_CHAT_INIT = true; // Set to true to skip chat initialization

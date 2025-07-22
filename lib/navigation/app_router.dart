@@ -3,12 +3,11 @@ import '../screens/trending_screen.dart';
 import '../screens/saved_posts_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/settings_screen.dart';
-import '../screens/help_screen.dart';
-import '../screens/about_screen.dart';
 import '../screens/post_detail_screen.dart';
 import '../screens/user_profile_screen.dart';
 import '../screens/community_detail_screen.dart';
 import '../screens/search_screen.dart';
+import '../screens/admin/admin_dashboard_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -25,14 +24,11 @@ class AppRouter {
       case '/settings':
         return MaterialPageRoute(builder: (_) => SettingsScreen());
 
-      case '/help':
-        return MaterialPageRoute(builder: (_) => HelpScreen());
-
-      case '/about':
-        return MaterialPageRoute(builder: (_) => AboutScreen());
-
       case '/search':
         return MaterialPageRoute(builder: (_) => SearchScreen());
+
+      case '/admin':
+        return MaterialPageRoute(builder: (_) => AdminDashboardScreen());
 
       case '/post':
         final args = settings.arguments as Map<String, dynamic>?;

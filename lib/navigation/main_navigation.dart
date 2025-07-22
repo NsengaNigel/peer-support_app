@@ -4,6 +4,7 @@ import '../screens/communities_screen.dart';
 import '../screens/post/create_post_screen.dart';
 import '../screens/chat/chat_list_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/search_screen.dart';
 import '../services/chat_service.dart';
 import 'app_drawer.dart';
 
@@ -79,6 +80,23 @@ class _MainNavigationState extends State<MainNavigation> {
     );
   }
 
+  String _getPageTitle() {
+    switch (_currentIndex) {
+      case 0:
+        return 'Peer Support';
+      case 1:
+        return 'Communities';
+      case 2:
+        return 'Create Post';
+      case 3:
+        return 'Chat';
+      case 4:
+        return 'Profile';
+      default:
+        return 'Peer Support';
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -89,6 +107,48 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: AppDrawer(onLogout: widget.onLogout),
+      appBar: AppBar(
+        backgroundColor: Color(0xFF00BCD4),
+        elevation: 0,
+        title: Text(
+          _getPageTitle(),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        iconTheme: IconThemeData(color: Colors.white),
+        actions: [
+          // Search icon
+          IconButton(
+            icon: Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              Navigator.pushNamed(context, '/search');
+            },
+          ),
+          // Profile icon
+          Container(
+            margin: EdgeInsets.only(right: 8),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.orange,
+              child: InkWell(
+                onTap: () {
+                  Navigator.pushNamed(context, '/profile');
+                },
+                child: Text(
+                  'U',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: PageView(
         controller: _pageController,
         children: _screens,

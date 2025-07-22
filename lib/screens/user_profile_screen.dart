@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/user_manager.dart';
+import '../screens/chat/chat_screen.dart';
+import '../services/chat_service.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
@@ -175,14 +177,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         SizedBox(height: 4),
                         
-                        // User email
-                        Text(
-                          _userData!['email'] ?? '',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
+                        // User email (only show to self or admin)
+                        if (_isCurrentUser || UserManager.isCurrentUserAdmin)
+                          Text(
+                            _userData!['email'] ?? '',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -217,6 +220,54 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
           ),
+          
+          // Chat section (only for other users)
+          if (!_isCurrentUser)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      // Get user display name for chat
+                      final displayName = _userData!['displayName'] ?? _userData!['email'] ?? 'Unknown User';
+                      
+                      // Navigate to chat screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            otherUserId: widget.userId,
+                            otherUserName: displayName,
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error opening chat: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  icon: Icon(Icons.message, size: 20),
+                  label: Text(
+                    'Send Message',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF00BCD4),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+              ),
+            ),
           
           // Posts section
           SliverToBoxAdapter(
