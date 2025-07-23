@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "159520444669",
+    "project_id": "peer-support-app-2cf36",
+    "storage_bucket": "peer-support-app-2cf36.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:159520444669:android:c4170e0c3aebb86e326e94",
+        "android_client_info": {
+          "package_name": "com.example.peer_support_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKTFjAMWYcupS3TYCd9YCiphMyRULUBgE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:159520444669:android:a81a4d7bb5338afd326e94",
+        "android_client_info": {
+          "package_name": "com.peersupport.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKTFjAMWYcupS3TYCd9YCiphMyRULUBgE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

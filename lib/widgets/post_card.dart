@@ -1,33 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../services/saved_posts_service.dart';
+import '../services/user_manager.dart';
+import '../models/user_model.dart';
+import '../widgets/admin_actions.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends StatefulWidget {
   final Map<String, dynamic> post;
   final VoidCallback? onTap;
   final VoidCallback? onCommentTap;
+  final VoidCallback? onCommunityTap;
+  final VoidCallback? onUserTap;
+  final VoidCallback? onPostDeleted; // Callback for when post is deleted
 
   const PostCard({
     Key? key,
     required this.post,
     this.onTap,
     this.onCommentTap,
+    this.onCommunityTap,
+    this.onUserTap,
+    this.onPostDeleted,
   }) : super(key: key);
 
   @override
+  State<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends State<PostCard> {
+  final SavedPostsService _savedPostsService = SavedPostsService();
+  bool _isLoadingSave = false;
+
+  bool get _isPostSaved {
+    final postId = widget.post['id'] ?? '';
+    final currentUser = UserManager.currentUserModel;
+    return _savedPostsService.isPostSaved(postId, currentUser);
+  }
+
+  Future<void> _toggleSavePost() async {
+    if (_isLoadingSave) return;
+
+    final postId = widget.post['id'];
+    if (postId == null || postId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot save: Post ID not available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoadingSave = true);
+
+    try {
+      if (_isPostSaved) {
+        await _savedPostsService.unsavePost(postId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Post unsaved'),
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      } else {
+        await _savedPostsService.savePost(postId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Post saved!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      }
+      
+      // Refresh user model to update saved posts
+      await UserManager.refreshUserModel();
+      
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingSave = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final communityName = post['communityName'] ?? '';
-    final authorUsername = post['author'] ?? post['authorUsername'] ?? 'user';
-    final createdAt = post['createdAt'] is DateTime
-        ? post['createdAt']
+    final communityName = widget.post['communityName'] ?? '';
+    final authorUsername = widget.post['author'] ?? widget.post['authorUsername'] ?? 'user';
+    final createdAt = widget.post['createdAt'] is DateTime
+        ? widget.post['createdAt']
         : DateTime.now();
-    final title = post['title'] ?? '';
-    final content = post['body'] ?? post['content'] ?? '';
-    final commentCount = (post['comments'] is List) ? post['comments'].length : (post['commentCount'] ?? 0);
+    final title = widget.post['title'] ?? '';
+    final content = widget.post['body'] ?? widget.post['content'] ?? '';
+    final commentCount = (widget.post['comments'] is List) ? widget.post['comments'].length : (widget.post['commentCount'] ?? 0);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -37,17 +123,20 @@ class PostCard extends StatelessWidget {
               // Community and author info
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: Text(
-                      communityName.isNotEmpty 
-                          ? communityName[0].toUpperCase()
-                          : 'C',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  GestureDetector(
+                    onTap: widget.onCommunityTap,
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Text(
+                        communityName.isNotEmpty 
+                            ? communityName[0].toUpperCase()
+                            : 'C',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -56,24 +145,49 @@ class PostCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'r/$communityName',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: Theme.of(context).primaryColor,
+                        GestureDetector(
+                          onTap: widget.onCommunityTap,
+                          child: Text(
+                            'r/$communityName',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Theme.of(context).primaryColor,
+                            ),
                           ),
                         ),
-                        Text(
-                          'u/$authorUsername • ${timeago.format(createdAt)}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: widget.onUserTap,
+                              child: Text(
+                                'u/$authorUsername',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              ' • ${timeago.format(createdAt)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+                  // Admin actions for admins/moderators
+                  if (UserManager.currentUserModel?.role.canDeletePosts() == true && widget.post['id'] != null)
+                    AdminPostActions(
+                      postId: widget.post['id'],
+                      authorId: widget.post['authorId'] ?? '',
+                      onDeleted: widget.onPostDeleted,
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -104,7 +218,7 @@ class PostCard extends StatelessWidget {
               Row(
                 children: [
                   InkWell(
-                    onTap: onCommentTap,
+                    onTap: widget.onCommentTap,
                     borderRadius: BorderRadius.circular(20),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -131,7 +245,42 @@ class PostCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: _toggleSavePost,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _isLoadingSave 
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                _isPostSaved ? Icons.bookmark : Icons.bookmark_border,
+                                size: 16,
+                                color: _isPostSaved ? Colors.orange : Colors.grey[600],
+                              ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isPostSaved ? 'Saved' : 'Save',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _isPostSaved ? Colors.orange : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   InkWell(
                     onTap: () {
                       // Share functionality

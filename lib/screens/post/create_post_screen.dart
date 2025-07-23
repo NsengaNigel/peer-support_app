@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/post.dart';
 import '../../models/community.dart';
 import '../../services/post_service.dart';
@@ -19,10 +20,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _contentController = TextEditingController();
   final _titleFocusNode = FocusNode();
   final _contentFocusNode = FocusNode();
-  
+
   final PostService _postService = PostService();
   final CommunityService _communityService = CommunityService();
-  
+
   Community? _selectedCommunity;
   List<Community> _communities = [];
   bool _isLoadingCommunities = true;
@@ -45,15 +46,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _loadCommunities() async {
     try {
-      final communities = await _communityService.getUserCommunities();
-      setState(() {
-        _communities = communities;
-        _isLoadingCommunities = false;
-      });
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (mounted) {
+          setState(() {
+            _communities = [];
+            _isLoadingCommunities = false;
+          });
+        }
+        return;
+      }
+      final communities = await _communityService.getUserCommunities(userId: user.uid);
+      if (mounted) {
+        setState(() {
+          _communities = communities;
+          _isLoadingCommunities = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingCommunities = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingCommunities = false;
+        });
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -80,6 +95,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to post.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
     });
@@ -89,8 +115,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
-        authorId: 'current_user_id', // Replace with actual user ID
-        authorUsername: 'current_user', // Replace with actual username
+        authorId: user.uid,
+        authorUsername: user.displayName ?? user.email ?? 'Anonymous',
         communityId: _selectedCommunity!.id,
         communityName: _selectedCommunity!.name,
         createdAt: DateTime.now(),
@@ -100,13 +126,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       await _postService.addPost(newPost);
 
       // Add to global postsNotifier
-      postsNotifier.value = [...postsNotifier.value, {
-        'id': newPost.id,
-        'title': newPost.title,
-        'author': newPost.authorUsername,
-        'body': newPost.content,
-        'comments': [],
-      }];
+      postsNotifier.value = [
+        ...postsNotifier.value,
+        {
+          'id': newPost.id,
+          'title': newPost.title,
+          'author': newPost.authorUsername,
+          'body': newPost.content,
+          'comments': [],
+        }
+      ];
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,11 +144,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true); // Return true to indicate success
+
+        // Navigate to the community screen with the selected community id
         Navigator.pushNamedAndRemoveUntil(
           context,
-          '/',
-          (route) => false,
+          '/community',
+              (route) => false,
+          arguments: {'communityId': _selectedCommunity!.id},
         );
       }
     } catch (e) {
@@ -150,20 +181,20 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             onPressed: _isSubmitting ? null : _submitPost,
             child: _isSubmitting
                 ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
                 : const Text(
-                    'POST',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+              'POST',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
@@ -177,7 +208,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Community Selection
                     const Text(
                       'Choose a community',
                       style: TextStyle(
@@ -197,8 +227,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       isLoading: _isLoadingCommunities,
                     ),
                     const SizedBox(height: 24),
-
-                    // Post Title
                     const Text(
                       'Title',
                       style: TextStyle(
@@ -230,8 +258,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
-
-                    // Post Content
                     const Text(
                       'Content',
                       style: TextStyle(
@@ -265,8 +291,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 ),
               ),
             ),
-
-            // Bottom Actions
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -279,7 +303,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSubmitting ? null : () {
+                      onPressed: _isSubmitting
+                          ? null
+                          : () {
                         Navigator.pop(context);
                       },
                       child: const Text('Cancel'),
@@ -292,25 +318,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       onPressed: _isSubmitting ? null : _submitPost,
                       child: _isSubmitting
                           ? const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Text('Posting...'),
-                              ],
-                            )
-                          : const Text(
-                              'Create Post',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white),
                             ),
+                          ),
+                          SizedBox(width: 8),
+                          Text('Posting...'),
+                        ],
+                      )
+                          : const Text(
+                        'Create Post',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
@@ -321,4 +348,4 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       ),
     );
   }
-} 
+}

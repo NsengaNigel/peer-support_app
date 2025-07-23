@@ -21,10 +21,10 @@ class Post {
     this.commentCount = 0,
   });
 
-  // Factory constructor for creating from JSON/Map
-  factory Post.fromMap(Map<String, dynamic> data, String id) {
+  // Create Post from Firestore doc data and doc ID
+  factory Post.fromMap(Map<String, dynamic> data, String docId) {
     return Post(
-      id: id,
+      id: docId,
       title: data['title'] ?? '',
       content: data['content'] ?? '',
       authorId: data['authorId'] ?? '',
@@ -36,7 +36,7 @@ class Post {
     );
   }
 
-  // Convert to Map for storage
+  // Convert Post to Map (without id, since it's used as doc ID)
   Map<String, dynamic> toMap() {
     return {
       'title': title,
@@ -49,4 +49,4 @@ class Post {
       'commentCount': commentCount,
     };
   }
-} 
+}
