@@ -102,6 +102,10 @@ vm_service
 3.3
 file:///Users/nigel/.pub-cache/hosted/pub.dev/vm_service-15.0.0/
 file:///Users/nigel/.pub-cache/hosted/pub.dev/vm_service-15.0.0/lib/
+peer_support_app
+3.0
+file:///Users/nigel/Documents/peer-support_app/
+file:///Users/nigel/Documents/peer-support_app/lib/
 sky_engine
 3.7
 file:///Users/nigel/development/flutter/bin/cache/pkg/sky_engine/
@@ -114,8 +118,4 @@ flutter_test
 3.7
 file:///Users/nigel/development/flutter/packages/flutter_test/
 file:///Users/nigel/development/flutter/packages/flutter_test/lib/
-peer_support_app
-3.0
-file:///Users/nigel/peer-support_app/
-file:///Users/nigel/peer-support_app/lib/
 2
