@@ -12,7 +12,7 @@ import '../screens/communities_screen.dart';
 class AppDrawer extends StatefulWidget {
   final VoidCallback? onLogout;
 
-  AppDrawer({Key? key, this.onLogout}) : super(key: key);
+  const AppDrawer({super.key, this.onLogout});
 
   @override
   State<AppDrawer> createState() => _AppDrawerState();

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 // Simple user storage for web testing
 class UserRegistry {

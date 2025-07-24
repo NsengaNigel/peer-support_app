@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../screens/post/create_post_screen.dart';
 
 class AppNavigation {
   static const String home = '/';

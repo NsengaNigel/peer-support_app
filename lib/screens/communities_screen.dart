@@ -8,7 +8,7 @@ import '../models/user_model.dart';
 import '../widgets/admin_actions.dart';
 
 class CommunitiesScreen extends StatefulWidget {
-  const CommunitiesScreen({Key? key}) : super(key: key);
+  const CommunitiesScreen({super.key});
 
   @override
   State<CommunitiesScreen> createState() => _CommunitiesScreenState();
@@ -58,8 +58,8 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> with SingleTicker
       
       if (mounted) {
         setState(() {
-          _allCommunities = results[0] as List<Community>;
-          _userCommunities = results[1] as List<Community>;
+          _allCommunities = results[0];
+          _userCommunities = results[1];
           _isLoading = false;
         });
       }

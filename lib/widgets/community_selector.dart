@@ -8,12 +8,12 @@ class CommunitySelector extends StatelessWidget {
   final bool isLoading;
 
   const CommunitySelector({
-    Key? key,
+    super.key,
     required this.selectedCommunity,
     required this.communities,
     required this.onCommunitySelected,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

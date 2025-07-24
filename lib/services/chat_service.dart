@@ -254,14 +254,14 @@ class ChatService {
       // Search by name (case-insensitive)
       final nameQuery = await _usersCollection
           .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThan: query + '\uf8ff')
+          .where('name', isLessThan: '$query\uf8ff')
           .limit(10)
           .get();
 
       // Search by email
       final emailQuery = await _usersCollection
           .where('email', isGreaterThanOrEqualTo: query)
-          .where('email', isLessThan: query + '\uf8ff')
+          .where('email', isLessThan: '$query\uf8ff')
           .limit(10)
           .get();
 

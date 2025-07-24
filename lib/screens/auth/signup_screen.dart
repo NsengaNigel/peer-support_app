@@ -7,7 +7,7 @@ import 'login_screen.dart';
 class SignUpScreen extends StatefulWidget {
   final VoidCallback? onSignUpSuccess;
 
-  const SignUpScreen({Key? key, this.onSignUpSuccess}) : super(key: key);
+  const SignUpScreen({super.key, this.onSignUpSuccess});
 
   @override
   _SignUpScreenState createState() => _SignUpScreenState();
@@ -327,7 +327,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ],
 
                           // Sign up button
-                          Container(
+                          SizedBox(
                             height: 56,
                             child: ElevatedButton(
                               onPressed: _isLoading ? null : _signUp,
@@ -374,7 +374,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
+                        SizedBox(
                           width: 120,
                           height: 50,
                           child: ElevatedButton(
@@ -402,7 +402,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                         SizedBox(width: 20),
-                        Container(
+                        SizedBox(
                           width: 120,
                           height: 50,
                           child: ElevatedButton(

@@ -11,7 +11,7 @@ import 'app_drawer.dart';
 class MainNavigation extends StatefulWidget {
   final VoidCallback? onLogout;
   
-  const MainNavigation({Key? key, this.onLogout}) : super(key: key);
+  const MainNavigation({super.key, this.onLogout});
   
   @override
   _MainNavigationState createState() => _MainNavigationState();

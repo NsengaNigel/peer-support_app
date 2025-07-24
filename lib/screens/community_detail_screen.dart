@@ -6,7 +6,7 @@ import '../services/history_service.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final String communityId;
-  const CommunityDetailScreen({Key? key, required this.communityId}) : super(key: key);
+  const CommunityDetailScreen({super.key, required this.communityId});
 
   @override
   State<CommunityDetailScreen> createState() => _CommunityDetailScreenState();
