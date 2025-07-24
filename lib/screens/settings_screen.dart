@@ -7,6 +7,8 @@ import '../main.dart';
 import 'edit_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
@@ -39,7 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Text(
                       (user?.displayName?.isNotEmpty == true 
                           ? user!.displayName![0].toUpperCase() 
-                          : user?.email?[0].toUpperCase()) ?? 'U',
+                          : user?.email[0].toUpperCase()) ?? 'U',
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),

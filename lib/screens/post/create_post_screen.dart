@@ -8,7 +8,7 @@ import '../../widgets/community_selector.dart';
 import '../../main.dart';
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({Key? key}) : super(key: key);
+  const CreatePostScreen({super.key});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -56,7 +56,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         }
         return;
       }
-      final communities = await _communityService.getUserCommunities(userId: user.uid);
+      final communities =
+          await _communityService.getUserCommunities(userId: user.uid);
       if (mounted) {
         setState(() {
           _communities = communities;
@@ -149,7 +150,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/community',
-              (route) => false,
+          (route) => false,
           arguments: {'communityId': _selectedCommunity!.id},
         );
       }
@@ -176,24 +177,37 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Post'),
+        backgroundColor: Colors.white, // Set background to white
+        foregroundColor: Colors.black, // Set text/icons to black
+        elevation: 1, // Add slight shadow
         actions: [
-          TextButton(
-            onPressed: _isSubmitting ? null : _submitPost,
-            child: _isSubmitting
-                ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitPost,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightBlue, // Light blue background
+                foregroundColor: Colors.white, // White text
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
-            )
-                : const Text(
-              'POST',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'POST',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -306,8 +320,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       onPressed: _isSubmitting
                           ? null
                           : () {
-                        Navigator.pop(context);
-                      },
+                              Navigator.pop(context);
+                            },
                       child: const Text('Cancel'),
                     ),
                   ),
@@ -318,26 +332,26 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       onPressed: _isSubmitting ? null : _submitPost,
                       child: _isSubmitting
                           ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white),
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Text('Posting...'),
-                        ],
-                      )
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Posting...'),
+                              ],
+                            )
                           : const Text(
-                        'Create Post',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                              'Create Post',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                 ],

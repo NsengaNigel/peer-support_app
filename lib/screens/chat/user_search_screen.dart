@@ -4,7 +4,7 @@ import '../../services/chat_service.dart';
 import 'chat_screen.dart';
 
 class UserSearchScreen extends StatefulWidget {
-  const UserSearchScreen({Key? key}) : super(key: key);
+  const UserSearchScreen({super.key});
 
   @override
   State<UserSearchScreen> createState() => _UserSearchScreenState();

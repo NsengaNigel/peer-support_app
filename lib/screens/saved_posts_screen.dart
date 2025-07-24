@@ -5,6 +5,8 @@ import '../widgets/post_card.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SavedPostsScreen extends StatefulWidget {
+  const SavedPostsScreen({super.key});
+
   @override
   State<SavedPostsScreen> createState() => _SavedPostsScreenState();
 }

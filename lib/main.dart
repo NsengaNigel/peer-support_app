@@ -34,9 +34,9 @@ void main() async {
   }
 
   // Skip chat service initialization in debug mode if needed
-  const bool SKIP_CHAT_INIT = true; // Set to true to skip chat initialization
+  const bool skipChatInit = true; // Set to true to skip chat initialization
   
-  if (!SKIP_CHAT_INIT) {
+  if (!skipChatInit) {
     // Initialize chat service and sync users
     final chatService = ChatService();
     try {
@@ -98,6 +98,8 @@ final ValueNotifier<List<Map<String, dynamic>>> postsNotifier = ValueNotifier([
 ]);
 
 class UniversityRedditApp extends StatelessWidget {
+  const UniversityRedditApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
@@ -129,6 +131,8 @@ class UniversityRedditApp extends StatelessWidget {
 
 // Web auth wrapper for testing
 class WebAuthWrapper extends StatefulWidget {
+  const WebAuthWrapper({super.key});
+
   @override
   _WebAuthWrapperState createState() => _WebAuthWrapperState();
 }
@@ -155,9 +159,9 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
         await UserManager.setFirebaseUser(user);
         
         // Skip chat service initialization in debug mode if needed
-        const bool SKIP_CHAT_INIT = true; // Set to true to skip chat initialization
+        const bool skipChatInit = true; // Set to true to skip chat initialization
         
-        if (!SKIP_CHAT_INIT) {
+        if (!skipChatInit) {
           // Initialize chat service with timeout
           try {
             await ChatService().initializeWithFirebaseUser().timeout(
@@ -205,9 +209,9 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
       await UserManager.setFirebaseUser(user);
       
       // Skip chat service initialization in debug mode if needed
-      const bool SKIP_CHAT_INIT = true; // Set to true to skip chat initialization
+      const bool skipChatInit = true; // Set to true to skip chat initialization
       
-      if (!SKIP_CHAT_INIT) {
+      if (!skipChatInit) {
         // Initialize chat service with Firebase user with timeout
         try {
           await ChatService().initializeWithFirebaseUser().timeout(

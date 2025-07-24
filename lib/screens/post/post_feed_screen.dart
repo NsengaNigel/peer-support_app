@@ -7,7 +7,7 @@ import '../search_screen.dart';
 import '../../services/user_manager.dart';
 
 class PostFeedScreen extends StatefulWidget {
-  const PostFeedScreen({Key? key}) : super(key: key);
+  const PostFeedScreen({super.key});
 
   @override
   State<PostFeedScreen> createState() => _PostFeedScreenState();

@@ -5,7 +5,7 @@ import 'signup_screen.dart';
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess; // Callback to notify when login succeeds
 
-  const LoginScreen({Key? key, this.onLoginSuccess}) : super(key: key);
+  const LoginScreen({super.key, this.onLoginSuccess});
 
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -327,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
 
                             // Login button with loading spinner
-                            Container(
+                            SizedBox(
                               height: 56,
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _login, // Disable button when loading
@@ -380,7 +380,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Disabled User login button (already on login screen)
-                          Container(
+                          SizedBox(
                             width: 120,
                             height: 50,
                             child: ElevatedButton(
@@ -405,7 +405,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(width: 20),
 
                           // Button to navigate to Register screen (SignUpScreen)
-                          Container(
+                          SizedBox(
                             width: 120,
                             height: 50,
                             child: ElevatedButton(

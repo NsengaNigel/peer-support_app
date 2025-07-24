@@ -5,6 +5,8 @@ import '../models/community.dart';
 import 'communities_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
+  const HistoryScreen({super.key});
+
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
