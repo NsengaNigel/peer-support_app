@@ -7,7 +7,6 @@ import 'post/create_post_screen.dart';
 import 'post_detail_screen.dart';
 import 'user_profile_screen.dart';
 import 'community_detail_screen.dart';
-import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

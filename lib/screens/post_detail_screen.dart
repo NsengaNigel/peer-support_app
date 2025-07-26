@@ -11,9 +11,9 @@ class PostDetailScreen extends StatefulWidget {
   final String postId;
 
   const PostDetailScreen({
-    Key? key,
+    super.key,
     required this.postId,
-  }) : super(key: key);
+  });
 
   @override
   State<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -158,7 +158,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ],
             onSelected: (value) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('${value} functionality coming soon!')),
+                SnackBar(content: Text('$value functionality coming soon!')),
               );
             },
           ),

@@ -7,7 +7,7 @@ import '../../widgets/admin_actions.dart';
 class AdminUserDetailScreen extends StatefulWidget {
   final UserModel user;
 
-  const AdminUserDetailScreen({Key? key, required this.user}) : super(key: key);
+  const AdminUserDetailScreen({super.key, required this.user});
 
   @override
   State<AdminUserDetailScreen> createState() => _AdminUserDetailScreenState();
@@ -112,7 +112,7 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> with Sing
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.user.displayName}'),
+        title: Text(widget.user.displayName),
         backgroundColor: Colors.red.shade600,
         foregroundColor: Colors.white,
         bottom: TabBar(

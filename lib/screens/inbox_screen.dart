@@ -61,7 +61,7 @@ class InboxScreen extends StatelessWidget {
 
 class ChatScreen extends StatefulWidget {
   final String personName;
-  const ChatScreen({Key? key, required this.personName}) : super(key: key);
+  const ChatScreen({super.key, required this.personName});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();

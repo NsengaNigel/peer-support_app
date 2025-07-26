@@ -10,12 +10,12 @@ class AdminCommentActions extends StatefulWidget {
   final VoidCallback? onDeleted;
 
   const AdminCommentActions({
-    Key? key,
+    super.key,
     required this.commentId,
     required this.postId,
     required this.authorId,
     this.onDeleted,
-  }) : super(key: key);
+  });
 
   @override
   State<AdminCommentActions> createState() => _AdminCommentActionsState();
@@ -228,11 +228,11 @@ class AdminPostActions extends StatefulWidget {
   final VoidCallback? onDeleted;
 
   const AdminPostActions({
-    Key? key,
+    super.key,
     required this.postId,
     required this.authorId,
     this.onDeleted,
-  }) : super(key: key);
+  });
 
   @override
   State<AdminPostActions> createState() => _AdminPostActionsState();
@@ -446,11 +446,11 @@ class AdminCommunityActions extends StatefulWidget {
   final VoidCallback? onDeleted;
 
   const AdminCommunityActions({
-    Key? key,
+    super.key,
     required this.communityId,
     required this.communityName,
     this.onDeleted,
-  }) : super(key: key);
+  });
 
   @override
   State<AdminCommunityActions> createState() => _AdminCommunityActionsState();
@@ -583,10 +583,10 @@ class UserRoleBadge extends StatelessWidget {
   final double? fontSize;
 
   const UserRoleBadge({
-    Key? key,
+    super.key,
     required this.role,
     this.fontSize,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
