@@ -263,14 +263,14 @@ class AdminService {
       // Search by email
       final emailQuery = await _usersCollection
           .where('email', isGreaterThanOrEqualTo: query)
-          .where('email', isLessThan: query + '\uf8ff')
+          .where('email', isLessThan: '$query\uf8ff')
           .limit(20)
           .get();
 
       // Search by display name
       final nameQuery = await _usersCollection
           .where('displayName', isGreaterThanOrEqualTo: query)
-          .where('displayName', isLessThan: query + '\uf8ff')
+          .where('displayName', isLessThan: '$query\uf8ff')
           .limit(20)
           .get();
 

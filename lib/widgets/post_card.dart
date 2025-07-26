@@ -14,14 +14,14 @@ class PostCard extends StatefulWidget {
   final VoidCallback? onPostDeleted; // Callback for when post is deleted
 
   const PostCard({
-    Key? key,
+    super.key,
     required this.post,
     this.onTap,
     this.onCommentTap,
     this.onCommunityTap,
     this.onUserTap,
     this.onPostDeleted,
-  }) : super(key: key);
+  });
 
   @override
   State<PostCard> createState() => _PostCardState();

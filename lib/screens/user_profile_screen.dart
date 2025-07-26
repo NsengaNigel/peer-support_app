@@ -6,7 +6,7 @@ import '../services/chat_service.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final String userId;
-  const UserProfileScreen({Key? key, required this.userId}) : super(key: key);
+  const UserProfileScreen({super.key, required this.userId});
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -287,7 +287,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           // Posts list
           _userPosts.isEmpty
               ? SliverToBoxAdapter(
-                  child: Container(
+                  child: SizedBox(
                     height: 200,
                     child: Center(
                       child: Column(

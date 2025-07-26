@@ -499,7 +499,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 // Updated MyPostsScreen to fetch real user posts
 class MyPostsScreen extends StatefulWidget {
-  const MyPostsScreen({Key? key}) : super(key: key);
+  const MyPostsScreen({super.key});
 
   @override
   _MyPostsScreenState createState() => _MyPostsScreenState();
@@ -622,7 +622,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
 
 // Updated MyCommentsScreen to fetch real user comments
 class MyCommentsScreen extends StatefulWidget {
-  const MyCommentsScreen({Key? key}) : super(key: key);
+  const MyCommentsScreen({super.key});
 
   @override
   _MyCommentsScreenState createState() => _MyCommentsScreenState();
@@ -813,7 +813,7 @@ class _MyCommunitiesScreenState extends State<MyCommunitiesScreen> {
 }
 
 class SavedScreen extends StatelessWidget {
-  const SavedScreen({Key? key}) : super(key: key);
+  const SavedScreen({super.key});
   
   @override
   Widget build(BuildContext context) {

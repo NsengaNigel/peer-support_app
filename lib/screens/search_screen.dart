@@ -7,7 +7,7 @@ import 'post_detail_screen.dart';
 import 'community_detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -98,16 +98,16 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
       setState(() {
         _posts = postsFiltered.map((doc) => {
           'id': doc.id,
-          ...doc.data() as Map<String, dynamic>,
+          ...doc.data(),
         }).toList();
 
         _communities = communitiesFiltered.map((doc) => 
-          Community.fromMap(doc.data() as Map<String, dynamic>, doc.id)
+          Community.fromMap(doc.data(), doc.id)
         ).toList();
 
         _users = usersFiltered.map((doc) => {
           'id': doc.id,
-          ...doc.data() as Map<String, dynamic>,
+          ...doc.data(),
         }).toList();
 
         _isLoading = false;
