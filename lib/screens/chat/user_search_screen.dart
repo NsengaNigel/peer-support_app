@@ -70,11 +70,8 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     });
 
     try {
-      // Only search by display name
-      final results = _allUsers.where((user) =>
-        user.displayName.toLowerCase().contains(query.toLowerCase())
-      ).toList();
-      
+      // Query Firestore for users whose displayName contains the query
+      final results = await _chatService.searchUsersByName(query);
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -85,7 +82,8 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error searching users: $e'),
+          content: Text('Error searching users: '
+              ' [31m$e [0m'),
           backgroundColor: Colors.red,
         ),
       );

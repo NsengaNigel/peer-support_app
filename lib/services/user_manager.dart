@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import 'admin_service.dart';
+import 'chat_service.dart';
 
 // Simple user data model for backward compatibility
 class AppUser {
@@ -71,6 +72,11 @@ class UserManager {
       
       // Load or create UserModel with admin roles
       await _loadUserModel(firebaseUser);
+      // Ensure user is also in chat_users collection
+      await ChatService().getOrCreateUser(
+        firebaseUser.uid,
+        firebaseUser.displayName ?? firebaseUser.email?.split('@')[0] ?? 'User',
+      );
     } else {
       _currentUser = null;
       _currentUserModel = null;

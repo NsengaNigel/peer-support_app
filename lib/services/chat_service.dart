@@ -263,23 +263,51 @@ class ChatService {
     }
   }
 
-  // Get all users (for production use)
-  Future<List<ChatUser>> getAllUsers() async {
+  // Search users by display name (case-insensitive, partial match)
+  Future<List<ChatUser>> searchUsersByName(String query) async {
     try {
-      // Only get users that have been properly registered through Firebase Auth
+      if (query.isEmpty) return [];
+      // Firestore does not support case-insensitive or contains queries directly, so we fetch a subset and filter in memory
       final snapshot = await _usersCollection
-          .where('isRegistered', isEqualTo: true) // Only get real registered users
-          .orderBy('displayName') // Sort by display name
+          .where('isRegistered', isEqualTo: true)
+          .orderBy('displayName')
           .limit(50)
           .get();
-
       return snapshot.docs
           .map((doc) => ChatUser.fromSnapshot(doc))
-          .where((user) => 
-            user.id != currentUserId && // Don't include current user
-            user.id.isNotEmpty && // Ensure valid user ID
-            user.displayName.isNotEmpty // Ensure valid display name
+          .where((user) =>
+            user.id != currentUserId &&
+            user.id.isNotEmpty &&
+            user.displayName.isNotEmpty &&
+            user.displayName.toLowerCase().contains(query.toLowerCase())
           )
+          .toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error searching users by name: $e');
+      }
+      return [];
+    }
+  }
+
+  // Get all users (fetch from main users collection, not just chat_users)
+  Future<List<ChatUser>> getAllUsers() async {
+    try {
+      // Fetch all users from the main users collection
+      final snapshot = await FirebaseFirestore.instance.collection('users')
+          .orderBy('displayName')
+          .limit(100)
+          .get();
+      return snapshot.docs
+          .map((doc) => ChatUser(
+                id: doc.id,
+                name: doc['displayName'] ?? doc['email']?.split('@')[0] ?? 'User',
+                email: doc['email'] ?? '',
+                isOnline: false,
+                lastSeen: DateTime.now(),
+                createdAt: DateTime.now(),
+                isRegistered: true,
+              ))
           .toList();
     } catch (e) {
       if (kDebugMode) {
