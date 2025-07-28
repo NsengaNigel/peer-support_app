@@ -21,49 +21,37 @@ class ChatService {
   CollectionReference get _usersCollection => _firestore.collection('chat_users');
 
   // Current user ID from Firebase Auth
-  String? get currentUserId => _auth.currentUser?.uid;
+  String? _currentUserId;
+  String? get currentUserId => _currentUserId;
 
-  // Initialize with Firebase Auth user
+  // Initialize with Firebase user
   Future<void> initializeWithFirebaseUser() async {
     try {
-      final user = _auth.currentUser;
-      if (user != null) {
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser == null) {
         if (kDebugMode) {
-          print('Initializing chat service for Firebase user: ${user.uid} (${user.email})');
+          print('No Firebase user found during chat initialization');
         }
-        
-        // Create or update user in Firestore
-        final chatUser = ChatUser(
-          id: user.uid,
-          name: user.displayName ?? user.email?.split('@')[0] ?? 'Unknown',
-          email: user.email ?? '',
-          isOnline: true,
-          lastSeen: DateTime.now(),
-          createdAt: DateTime.now(),
-        );
-        
-        // Add timeout to Firestore operation
-        await _usersCollection.doc(user.uid).set(chatUser.toMap()).timeout(
-          Duration(seconds: 8),
-          onTimeout: () {
-            if (kDebugMode) {
-              print('Warning: Firestore set operation timed out for user: ${user.uid}');
-            }
-            throw TimeoutException('Firestore operation timed out');
-          },
-        );
-        
-        if (kDebugMode) {
-          print('Chat service initialized successfully for Firebase user: ${user.uid} (${user.email})');
-        }
-      } else {
-        if (kDebugMode) {
-          print('No Firebase user found during chat service initialization');
-        }
+        return;
+      }
+
+      _currentUserId = firebaseUser.uid;
+      
+      // Get or create chat user
+      await getOrCreateUser(
+        firebaseUser.uid,
+        firebaseUser.displayName ?? firebaseUser.email?.split('@')[0] ?? 'User',
+      );
+
+      // Update online status
+      await updateUserStatus(firebaseUser.uid, isOnline: true);
+
+      if (kDebugMode) {
+        print('Chat service initialized for user: ${firebaseUser.uid}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error initializing chat service with Firebase user: $e');
+        print('Error initializing chat service: $e');
       }
       rethrow;
     }
@@ -129,17 +117,6 @@ class ChatService {
         print('Error syncing users to chat: $e');
       }
       rethrow;
-    }
-  }
-
-  // Initialize with temporary user (for backward compatibility)
-  Future<void> initializeTempUser(String userId, String name) async {
-    // Create or update user in Firestore
-    final user = ChatUser.createTempUser(userId, name);
-    await _usersCollection.doc(userId).set(user.toMap());
-    
-    if (kDebugMode) {
-      print('Chat service initialized for temp user: $userId ($name)');
     }
   }
 
@@ -286,11 +263,24 @@ class ChatService {
     }
   }
 
-  // Get all users (for testing - remove in production)
+  // Get all users (for production use)
   Future<List<ChatUser>> getAllUsers() async {
     try {
-      final snapshot = await _usersCollection.limit(50).get();
-      return snapshot.docs.map((doc) => ChatUser.fromSnapshot(doc)).toList();
+      // Only get users that have been properly registered through Firebase Auth
+      final snapshot = await _usersCollection
+          .where('isRegistered', isEqualTo: true) // Only get real registered users
+          .orderBy('displayName') // Sort by display name
+          .limit(50)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => ChatUser.fromSnapshot(doc))
+          .where((user) => 
+            user.id != currentUserId && // Don't include current user
+            user.id.isNotEmpty && // Ensure valid user ID
+            user.displayName.isNotEmpty // Ensure valid display name
+          )
+          .toList();
     } catch (e) {
       if (kDebugMode) {
         print('Error getting all users: $e');
@@ -388,42 +378,99 @@ class ChatService {
   }
 
   // Create some test users (for development)
-  Future<void> createTestUsers() async {
-    final testUsers = [
-      ChatUser.createTempUser('user1', 'Alice Johnson'),
-      ChatUser.createTempUser('user2', 'Bob Smith'),
-      ChatUser.createTempUser('user3', 'Charlie Brown'),
-      ChatUser.createTempUser('user4', 'Diana Prince'),
-      ChatUser.createTempUser('user5', 'Eve Wilson'),
-    ];
+  // Future<void> createTestUsers() async {
+  //   final testUsers = [
+  //     ChatUser.createTempUser('user1', 'Alice Johnson'),
+  //     ChatUser.createTempUser('user2', 'Bob Smith'),
+  //     ChatUser.createTempUser('user3', 'Charlie Brown'),
+  //     ChatUser.createTempUser('user4', 'Diana Prince'),
+  //     ChatUser.createTempUser('user5', 'Eve Wilson'),
+  //   ];
 
-    for (final user in testUsers) {
-      await _usersCollection.doc(user.id).set(user.toMap());
-    }
+  //   for (final user in testUsers) {
+  //     await _usersCollection.doc(user.id).set(user.toMap());
+  //   }
 
-    if (kDebugMode) {
-      print('Created ${testUsers.length} test users');
-    }
+  //   if (kDebugMode) {
+  //     print('Created ${testUsers.length} test users');
+  //   }
+  // }
+
+  // Create a new chat user from Firebase user data
+  Future<ChatUser> createChatUser(String userId, String name, String email) async {
+    final user = ChatUser(
+      id: userId,
+      name: name,
+      email: email,
+      createdAt: DateTime.now(),
+      isRegistered: true, // Mark as registered since coming from Firebase
+    );
+
+    await _usersCollection.doc(userId).set(user.toMap());
+    return user;
   }
 
   // Get user by ID
   Future<ChatUser?> getUserById(String userId) async {
     try {
       final doc = await _usersCollection.doc(userId).get();
-      if (doc.exists) {
-        return ChatUser.fromSnapshot(doc);
-      }
-      return null;
+      if (!doc.exists) return null;
+      return ChatUser.fromSnapshot(doc);
     } catch (e) {
       if (kDebugMode) {
-        print('Error getting user: $e');
+        print('Error getting user by ID: $e');
       }
       return null;
     }
   }
 
+  // Update user's online status
+  Future<void> updateUserStatus(String userId, {required bool isOnline}) async {
+    try {
+      await _usersCollection.doc(userId).update({
+        'isOnline': isOnline,
+        'lastSeen': isOnline ? null : FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating user status: $e');
+      }
+    }
+  }
+
   // Clean up resources
   void dispose() {
-    // Clean up any subscriptions if needed
+    // Update user status to offline
+    if (_currentUserId != null) {
+      updateUserStatus(_currentUserId!, isOnline: false);
+    }
+  }
+
+  // Create a new chat user from Firebase user data
+  Future<ChatUser> _createUserFromFirebase(String userId, String name) async {
+    final user = await createChatUser(
+      userId,
+      name,
+      '$userId@firebase.com', // Temporary email, will be updated with real email
+    );
+    return user;
+  }
+
+  // Get or create user by ID
+  Future<ChatUser> getOrCreateUser(String userId, String name) async {
+    try {
+      final existingUser = await getUserById(userId);
+      if (existingUser != null) {
+        return existingUser;
+      }
+      
+      // Create new user if doesn't exist
+      return await _createUserFromFirebase(userId, name);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting or creating user: $e');
+      }
+      rethrow;
+    }
   }
 } 

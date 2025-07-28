@@ -70,7 +70,11 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     });
 
     try {
-      final results = await _chatService.searchUsers(query);
+      // Only search by display name
+      final results = _allUsers.where((user) =>
+        user.displayName.toLowerCase().contains(query.toLowerCase())
+      ).toList();
+      
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -105,7 +109,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('New Chat'),
-        backgroundColor: Colors.orange,
+        backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -116,7 +120,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search users by name or email...',
+                hintText: 'Search users by name...',
                 prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
@@ -133,7 +137,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
             child: _isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      color: Colors.orange,
+                      color: Color(0xFF26A69A),
                     ),
                   )
                 : _buildUsersList(),
@@ -156,7 +160,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _hasSearched ? 'No users found' : 'No users available',
+              _hasSearched ? 'No users found' : 'No registered users available',
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey[600],
@@ -164,35 +168,14 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              _hasSearched
-                  ? 'Try a different search term'
-                  : 'Create test users to start chatting',
+              _hasSearched 
+                ? 'Try a different name'
+                : 'Users will appear here once they register',
               style: TextStyle(
                 color: Colors.grey[500],
               ),
               textAlign: TextAlign.center,
             ),
-            if (!_hasSearched) ...[
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  await _chatService.createTestUsers();
-                  _loadAllUsers();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Test users created!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.group_add),
-                label: const Text('Create Test Users'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
           ],
         ),
       );
@@ -214,13 +197,13 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: Colors.orange[100],
+              backgroundColor: const Color(0xFF26A69A).withOpacity(0.2),
               child: Text(
                 user.displayName.isNotEmpty
                     ? user.displayName[0].toUpperCase()
                     : '?',
                 style: const TextStyle(
-                  color: Colors.orange,
+                  color: Color(0xFF26A69A),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -231,43 +214,9 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.email,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  'ID: ${user.id}',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (user.isOnline)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                Icon(
-                  Icons.chat,
-                  color: Colors.orange,
-                ),
-              ],
+            trailing: const Icon(
+              Icons.chat,
+              color: Color(0xFF26A69A),
             ),
             onTap: () => _startChatWithUser(user),
           ),

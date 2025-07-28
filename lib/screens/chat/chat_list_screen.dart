@@ -14,70 +14,98 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   final ChatService _chatService = ChatService();
+  bool _showUnreadOnly = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chats'),
-        backgroundColor: Colors.orange,
+        backgroundColor: const Color(0xFF26A69A), // Teal color
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const UserSearchScreen(),
-                ),
+          StreamBuilder<List<ChatConversation>>(
+            stream: _chatService.getConversationsStream(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              
+              final conversations = snapshot.data ?? [];
+              final currentUserId = _chatService.currentUserId;
+              if (currentUserId == null) return const SizedBox.shrink();
+              
+              final totalUnread = conversations.fold<int>(
+                0,
+                (sum, conv) => sum + conv.getUnreadCount(currentUserId),
+              );
+              
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.chat),
+                  if (totalUnread > 0)
+                    Positioned(
+                      top: 8,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          totalUnread.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
         children: [
-          // Quick actions bar
+          // Read/Unread filter
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const UserSearchScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('New Chat'),
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => _showUnreadOnly = false),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
+                      backgroundColor: !_showUnreadOnly ? Colors.blue : Colors.grey[200],
+                      foregroundColor: !_showUnreadOnly ? Colors.white : Colors.black87,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
+                    child: const Text('Read'),
                   ),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    // Create test users for development
-                    await _chatService.createTestUsers();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Test users created!'),
-                        backgroundColor: Colors.green,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => _showUnreadOnly = true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _showUnreadOnly ? Colors.blue : Colors.grey[200],
+                      foregroundColor: _showUnreadOnly ? Colors.white : Colors.black87,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.group_add),
-                  label: const Text('Add Test Users'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Unread'),
                   ),
                 ),
               ],
@@ -91,7 +119,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      color: Colors.orange,
+                      color: Color(0xFF26A69A),
                     ),
                   );
                 }
@@ -114,22 +142,20 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             color: Colors.red[600],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          snapshot.error.toString(),
-                          style: TextStyle(
-                            color: Colors.red[400],
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
                       ],
                     ),
                   );
                 }
 
                 final conversations = snapshot.data ?? [];
+                final filteredConversations = _showUnreadOnly
+                    ? conversations.where((conv) {
+                        final currentUserId = _chatService.currentUserId;
+                        return conv.getUnreadCount(currentUserId ?? '') > 0;
+                      }).toList()
+                    : conversations;
 
-                if (conversations.isEmpty) {
+                if (filteredConversations.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -141,19 +167,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No conversations yet',
+                          _showUnreadOnly ? 'No unread messages' : 'No conversations yet',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.grey[600],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Start a new conversation by tapping the + button',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                          ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -161,96 +179,101 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 }
 
                 return ListView.builder(
-                  itemCount: conversations.length,
+                  itemCount: filteredConversations.length,
                   itemBuilder: (context, index) {
-                    final conversation = conversations[index];
+                    final conversation = filteredConversations[index];
                     final currentUserId = _chatService.currentUserId;
-                    
-                    if (currentUserId == null) {
-                      return const SizedBox.shrink();
-                    }
+                    if (currentUserId == null) return const SizedBox.shrink();
 
                     final otherParticipantId = conversation.getOtherParticipantId(currentUserId);
                     final otherParticipantName = conversation.getOtherParticipantName(currentUserId);
                     final unreadCount = conversation.getUnreadCount(currentUserId);
+                    final isRead = unreadCount == 0;
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.orange[100],
-                          child: Text(
-                            otherParticipantName.isNotEmpty
-                                ? otherParticipantName[0].toUpperCase()
-                                : '?',
-                            style: const TextStyle(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              otherUserId: otherParticipantId,
+                              otherUserName: otherParticipantName,
                             ),
                           ),
-                        ),
-                        title: Text(
-                          otherParticipantName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: Colors.grey[200]!),
                           ),
                         ),
-                        subtitle: Text(
-                          conversation.lastMessage ?? 'No messages yet',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        child: Row(
                           children: [
-                            if (conversation.lastMessageTimestamp != null)
-                              Text(
-                                timeago.format(conversation.lastMessageTimestamp!),
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: const Color(0xFF26A69A).withOpacity(0.2),
+                              child: Text(
+                                otherParticipantName.isNotEmpty
+                                    ? otherParticipantName[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: Color(0xFF26A69A),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            if (unreadCount > 0)
-                              Container(
-                                margin: const EdgeInsets.only(top: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    otherParticipantName,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    conversation.lastMessage ?? 'No messages yet',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (conversation.lastMessageTimestamp != null)
+                                  Text(
+                                    timeago.format(conversation.lastMessageTimestamp!),
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isRead ? 'Read' : 'Unread',
+                                  style: TextStyle(
+                                    color: isRead ? Colors.grey[500] : Colors.blue,
                                     fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
                                   ),
                                 ),
-                              ),
+                              ],
+                            ),
                           ],
                         ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                otherUserId: otherParticipantId,
-                                otherUserName: otherParticipantName,
-                              ),
-                            ),
-                          );
-                        },
                       ),
                     );
                   },
@@ -259,6 +282,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const UserSearchScreen(),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFF26A69A),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

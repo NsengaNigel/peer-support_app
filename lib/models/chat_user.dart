@@ -8,6 +8,7 @@ class ChatUser {
   final bool isOnline;
   final DateTime? lastSeen;
   final DateTime createdAt;
+  final bool isRegistered; // Track if user is properly registered
 
   ChatUser({
     required this.id,
@@ -17,6 +18,7 @@ class ChatUser {
     this.isOnline = false,
     this.lastSeen,
     required this.createdAt,
+    this.isRegistered = false, // Default to false
   });
 
   // Convert to Map for Firestore
@@ -29,6 +31,7 @@ class ChatUser {
       'isOnline': isOnline,
       'lastSeen': lastSeen != null ? Timestamp.fromDate(lastSeen!) : null,
       'createdAt': Timestamp.fromDate(createdAt),
+      'isRegistered': isRegistered,
     };
   }
 
@@ -44,6 +47,7 @@ class ChatUser {
           ? (map['lastSeen'] as Timestamp).toDate()
           : null,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
+      isRegistered: map['isRegistered'] ?? false,
     );
   }
 
@@ -62,6 +66,7 @@ class ChatUser {
     bool? isOnline,
     DateTime? lastSeen,
     DateTime? createdAt,
+    bool? isRegistered,
   }) {
     return ChatUser(
       id: id ?? this.id,
@@ -71,21 +76,12 @@ class ChatUser {
       isOnline: isOnline ?? this.isOnline,
       lastSeen: lastSeen ?? this.lastSeen,
       createdAt: createdAt ?? this.createdAt,
+      isRegistered: isRegistered ?? this.isRegistered,
     );
   }
 
   // Create a display name from name or email
   String get displayName {
     return name.isNotEmpty ? name : email.split('@')[0];
-  }
-
-  // Create temporary user for testing
-  static ChatUser createTempUser(String userId, String name) {
-    return ChatUser(
-      id: userId,
-      name: name,
-      email: '$userId@temp.com',
-      createdAt: DateTime.now(),
-    );
   }
 } 

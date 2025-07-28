@@ -6,6 +6,7 @@ import '../screens/chat/chat_list_screen.dart';
 import '../screens/profile_screen.dart';
 import '../screens/search_screen.dart';
 import '../services/chat_service.dart';
+import '../models/chat_conversation.dart';
 import 'app_drawer.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -41,33 +42,127 @@ class _MainNavigationState extends State<MainNavigation> {
     ProfileScreen(onLogout: widget.onLogout),
   ];
 
-  final List<BottomNavigationBarItem> _navItems = [
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home_outlined),
-      activeIcon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.groups_outlined),
-      activeIcon: Icon(Icons.groups),
-      label: 'Communities',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.add_circle_outline),
-      activeIcon: Icon(Icons.add_circle),
-      label: 'Create',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.chat_bubble_outline),
-      activeIcon: Icon(Icons.chat_bubble),
-      label: 'Chat',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.person_outline),
-      activeIcon: Icon(Icons.person),
-      label: 'Profile',
-    ),
-  ];
+  List<BottomNavigationBarItem> _buildNavItems() {
+    return [
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.home_outlined),
+        activeIcon: Icon(Icons.home),
+        label: 'Home',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.groups_outlined),
+        activeIcon: Icon(Icons.groups),
+        label: 'Communities',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.add_circle_outline),
+        activeIcon: Icon(Icons.add_circle),
+        label: 'Create',
+      ),
+      BottomNavigationBarItem(
+        icon: StreamBuilder<List<ChatConversation>>(
+          stream: _chatService.getConversationsStream(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const Icon(Icons.chat_bubble_outline);
+            
+            final conversations = snapshot.data ?? [];
+            final currentUserId = _chatService.currentUserId;
+            if (currentUserId == null) return const Icon(Icons.chat_bubble_outline);
+            
+            final totalUnread = conversations.fold<int>(
+              0,
+              (sum, conv) => sum + conv.getUnreadCount(currentUserId),
+            );
+            
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.chat_bubble_outline),
+                if (totalUnread > 0)
+                  Positioned(
+                    top: -5,
+                    right: -5,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        totalUnread.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+        activeIcon: StreamBuilder<List<ChatConversation>>(
+          stream: _chatService.getConversationsStream(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const Icon(Icons.chat_bubble);
+            
+            final conversations = snapshot.data ?? [];
+            final currentUserId = _chatService.currentUserId;
+            if (currentUserId == null) return const Icon(Icons.chat_bubble);
+            
+            final totalUnread = conversations.fold<int>(
+              0,
+              (sum, conv) => sum + conv.getUnreadCount(currentUserId),
+            );
+            
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.chat_bubble),
+                if (totalUnread > 0)
+                  Positioned(
+                    top: -5,
+                    right: -5,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        totalUnread.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+        label: 'Chat',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.person_outline),
+        activeIcon: Icon(Icons.person),
+        label: 'Profile',
+      ),
+    ];
+  }
 
   void _onTabTapped(int index) {
     setState(() {
@@ -75,7 +170,7 @@ class _MainNavigationState extends State<MainNavigation> {
     });
     _pageController.animateToPage(
       index,
-      duration: Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
   }
@@ -108,27 +203,27 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       drawer: AppDrawer(onLogout: widget.onLogout),
       appBar: AppBar(
-        backgroundColor: Color(0xFF00BCD4),
+        backgroundColor: const Color(0xFF00BCD4),
         elevation: 0,
         title: Text(
           _getPageTitle(),
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           // Search icon
           IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
+            icon: const Icon(Icons.search, color: Colors.white),
             onPressed: () {
               Navigator.pushNamed(context, '/search');
             },
           ),
           // Profile icon
           Container(
-            margin: EdgeInsets.only(right: 8),
+            margin: const EdgeInsets.only(right: 8),
             child: CircleAvatar(
               radius: 18,
               backgroundColor: Colors.orange,
@@ -136,7 +231,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 onTap: () {
                   Navigator.pushNamed(context, '/profile');
                 },
-                child: Text(
+                child: const Text(
                   'U',
                   style: TextStyle(
                     color: Colors.white,
@@ -166,7 +261,7 @@ class _MainNavigationState extends State<MainNavigation> {
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         elevation: 8,
-        items: _navItems,
+        items: _buildNavItems(),
       ),
     );
   }

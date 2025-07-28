@@ -79,46 +79,8 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white,
-              child: Text(
-                widget.otherUserName.isNotEmpty
-                    ? widget.otherUserName[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.otherUserName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    'ID: ${widget.otherUserId}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.orange,
+        title: Text(widget.otherUserName),
+        backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
       ),
       body: Column(
@@ -131,7 +93,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      color: Colors.orange,
+                      color: Color(0xFF26A69A),
                     ),
                   );
                 }
@@ -212,13 +174,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (!isMe)
                             CircleAvatar(
                               radius: 16,
-                              backgroundColor: Colors.orange[100],
+                              backgroundColor: const Color(0xFF26A69A).withOpacity(0.2),
                               child: Text(
                                 message.senderName.isNotEmpty
                                     ? message.senderName[0].toUpperCase()
                                     : '?',
                                 style: const TextStyle(
-                                  color: Colors.orange,
+                                  color: Color(0xFF26A69A),
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -241,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isMe
-                                        ? Colors.orange
+                                        ? const Color(0xFF26A69A)
                                         : Colors.grey[200],
                                     borderRadius: BorderRadius.circular(20),
                                   ),
@@ -268,13 +230,13 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (isMe)
                             CircleAvatar(
                               radius: 16,
-                              backgroundColor: Colors.orange[100],
+                              backgroundColor: const Color(0xFF26A69A).withOpacity(0.2),
                               child: Text(
                                 message.senderName.isNotEmpty
                                     ? message.senderName[0].toUpperCase()
                                     : '?',
                                 style: const TextStyle(
-                                  color: Colors.orange,
+                                  color: Color(0xFF26A69A),
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -292,9 +254,9 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Colors.white,
               border: Border(
-                top: BorderSide(color: Colors.grey[300]!),
+                top: BorderSide(color: Colors.grey[200]!),
               ),
             ),
             child: Row(
@@ -309,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: Colors.grey[100],
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
@@ -323,24 +285,22 @@ class _ChatScreenState extends State<ChatScreen> {
                 const SizedBox(width: 8),
                 Container(
                   decoration: const BoxDecoration(
-                    color: Colors.orange,
+                    color: Color(0xFF26A69A),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
-                    onPressed: _isLoading ? null : _sendMessage,
                     icon: _isLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
+                            width: 24,
+                            height: 24,
                             child: CircularProgressIndicator(
                               color: Colors.white,
                               strokeWidth: 2,
                             ),
                           )
-                        : const Icon(
-                            Icons.send,
-                            color: Colors.white,
-                          ),
+                        : const Icon(Icons.send),
+                    color: Colors.white,
+                    onPressed: _isLoading ? null : _sendMessage,
                   ),
                 ),
               ],
