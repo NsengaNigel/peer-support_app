@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../main.dart';
 import '../../widgets/post_card.dart';
+import '../../widgets/home_return_arrow.dart';
 import 'create_post_screen.dart';
 import '../search_screen.dart';
 import '../../services/user_manager.dart';
@@ -90,11 +91,10 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'UniReddit',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+      appBar: HomeReturnAppBar(
+        title: 'UniReddit',
+        backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

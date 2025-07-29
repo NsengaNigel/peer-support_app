@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../models/chat_message.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/home_return_arrow.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -78,8 +79,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.otherUserName),
+      appBar: HomeReturnAppBar(
+        title: widget.otherUserName,
         backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
       ),

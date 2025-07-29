@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user_model.dart';
 import '../../services/admin_service.dart';
 import '../../widgets/admin_actions.dart';
+import '../../widgets/home_return_arrow.dart';
 
 class AdminUserDetailScreen extends StatefulWidget {
   final UserModel user;
@@ -111,8 +112,8 @@ class _AdminUserDetailScreenState extends State<AdminUserDetailScreen> with Sing
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.user.displayName),
+      appBar: HomeReturnAppBar(
+        title: widget.user.displayName,
         backgroundColor: Colors.red.shade600,
         foregroundColor: Colors.white,
         bottom: TabBar(

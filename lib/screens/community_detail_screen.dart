@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/community_service.dart';
 import '../services/user_manager.dart';
 import '../services/history_service.dart';
+import '../widgets/home_return_arrow.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final String communityId;
@@ -228,9 +229,10 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text(_communityName),
+      appBar: HomeReturnAppBar(
+        title: _communityName,
         backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
         actions: [
           if (_joined)
             IconButton(

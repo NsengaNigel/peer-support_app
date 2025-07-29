@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/chat_user.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/home_return_arrow.dart';
 import 'chat_screen.dart';
 
 class UserSearchScreen extends StatefulWidget {
@@ -105,8 +106,8 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Chat'),
+      appBar: HomeReturnAppBar(
+        title: 'New Chat',
         backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
       ),

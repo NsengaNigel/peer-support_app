@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/user_manager.dart';
 import '../models/community.dart';
+import '../widgets/home_return_arrow.dart';
 import 'communities_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -135,8 +136,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text('History'),
+      appBar: HomeReturnAppBar(
+        title: 'History',
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
         actions: [
