@@ -95,18 +95,35 @@ class HomeReturnAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: defaultBackgroundColor,
       foregroundColor: defaultForegroundColor,
       leading: showHomeButton
-          ? IconButton(
-              icon: Icon(Icons.home),
-              onPressed: () => _navigateToHome(context),
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.menu),
+                  onPressed: () {
+                    Scaffold.of(context).openDrawer();
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.home),
+                  onPressed: () => _navigateToHome(context),
+                ),
+              ],
             )
-          : null,
+          : IconButton(
+              icon: Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            ),
+      leadingWidth: showHomeButton ? 96 : 48, // Double width when showing both icons
       actions: actions,
       bottom: bottom,
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(bottom == null ? kToolbarHeight : kToolbarHeight + bottom!.preferredSize.height);
 
   void _navigateToHome(BuildContext context) {
     // Navigate to home and clear the navigation stack
