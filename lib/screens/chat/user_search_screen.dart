@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/chat_user.dart';
 import '../../services/chat_service.dart';
-import '../../widgets/home_return_arrow.dart';
+import '../../navigation/app_drawer.dart';
 import 'chat_screen.dart';
 
 class UserSearchScreen extends StatefulWidget {
@@ -83,8 +83,7 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error searching users: '
-              ' [31m$e [0m'),
+          content: Text('Error searching users: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -106,10 +105,24 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeReturnAppBar(
-        title: 'New Chat',
+      drawer: AppDrawer(onLogout: null), // Pass null since this is not the main navigation
+      appBar: AppBar(
+        title: const Text('Search Users'),
         backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {
+              // Add new user functionality
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Add user functionality coming soon!'),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/home_return_arrow.dart';
+import '../navigation/app_drawer.dart';
 
 class InboxScreen extends StatelessWidget {
   const InboxScreen({super.key});
@@ -35,8 +35,9 @@ class InboxScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: HomeReturnAppBar(
-        title: 'Inbox',
+      drawer: AppDrawer(onLogout: null), // Pass null since this is not the main navigation
+      appBar: AppBar(
+        title: const Text('Inbox'),
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
       ),
