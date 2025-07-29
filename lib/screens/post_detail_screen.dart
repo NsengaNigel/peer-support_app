@@ -5,6 +5,7 @@ import '../services/comments_service.dart';
 import '../services/user_manager.dart';
 import '../models/comment.dart';
 import '../widgets/admin_actions.dart';
+import '../widgets/home_return_arrow.dart';
 import '../main.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -129,9 +130,10 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
+      appBar: HomeReturnAppBar(
+        title: _post?['title'] ?? 'Post',
         backgroundColor: Color(0xFF00BCD4),
-        title: Text(_post?['title'] ?? 'Post'),
+        foregroundColor: Colors.white,
         actions: [
           PopupMenuButton(
             itemBuilder: (context) => [
@@ -435,6 +437,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: HomeReturnArrow(
+        isFloating: true,
+        backgroundColor: Color(0xFF00BCD4),
+        iconColor: Colors.white,
+        size: 48,
+        margin: EdgeInsets.only(bottom: 80), // Position above the comment input
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_manager.dart';
 import '../models/user_model.dart';
 import '../widgets/admin_actions.dart';
+import '../widgets/home_return_arrow.dart';
 import '../main.dart';
 import 'edit_profile_screen.dart';
 
@@ -22,8 +23,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text('Settings'),
+      appBar: HomeReturnAppBar(
+        title: 'Settings',
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
       ),

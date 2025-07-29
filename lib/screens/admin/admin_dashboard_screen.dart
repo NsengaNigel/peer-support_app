@@ -3,6 +3,7 @@ import '../../services/admin_service.dart';
 import '../../services/user_manager.dart';
 import '../../models/user_model.dart';
 import '../../widgets/admin_actions.dart';
+import '../../widgets/home_return_arrow.dart';
 import 'admin_user_detail_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -96,8 +97,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Admin Dashboard'),
+      appBar: HomeReturnAppBar(
+        title: 'Admin Dashboard',
         backgroundColor: Colors.red.shade600,
         foregroundColor: Colors.white,
         bottom: TabBar(

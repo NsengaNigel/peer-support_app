@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../models/chat_conversation.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/home_return_arrow.dart';
 import 'chat_screen.dart';
 import 'user_search_screen.dart';
 
@@ -19,8 +20,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chats'),
+      appBar: HomeReturnAppBar(
+        title: 'Chats',
         backgroundColor: const Color(0xFF26A69A), // Teal color
         foregroundColor: Colors.white,
         actions: [
