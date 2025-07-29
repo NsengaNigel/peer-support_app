@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 // Firebase imports (for Authentication and Firestore chat)
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +11,7 @@ import 'services/chat_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'navigation/app_router.dart';
 import 'navigation/main_navigation.dart';
+import 'services/auth_service.dart'; // Added import for AuthService
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -140,105 +142,121 @@ class WebAuthWrapper extends StatefulWidget {
 class _WebAuthWrapperState extends State<WebAuthWrapper> {
   bool _isLoggedIn = false;
   bool _isLoading = true;
+  final AuthService _authService = AuthService();
+  StreamSubscription<User?>? _authStateSubscription;
   
   @override
   void initState() {
     super.initState();
-    _checkAuthState();
+    _setupAuthStateListener();
   }
   
-  void _checkAuthState() async {
-    // Wait a bit to ensure Firebase is fully initialized
-    await Future.delayed(Duration(milliseconds: 100));
-    
-    try {
-      // Check if user is already logged in with Firebase Auth
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // User is logged in, sync with UserManager and ChatService
-        await UserManager.setFirebaseUser(user);
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
+  }
+  
+  void _setupAuthStateListener() {
+    _authStateSubscription = _authService.authStateChanges.listen((User? user) {
+      if (mounted) {
+        final wasLoggedIn = _isLoggedIn;
+        final newLoggedInState = user != null;
         
-        // Skip chat service initialization in debug mode if needed
-        const bool skipChatInit = true; // Set to true to skip chat initialization
-        
-        if (!skipChatInit) {
-          // Initialize chat service with timeout
-          try {
-            await ChatService().initializeWithFirebaseUser().timeout(
-              Duration(seconds: 10),
-              onTimeout: () {
-                print('Warning: Chat service initialization timed out during auth check, continuing anyway...');
-              },
-            );
-          } catch (e) {
-            print('Warning: Chat service initialization failed during auth check: $e, continuing anyway...');
-          }
-        } else {
-          print('Debug: Skipping chat service initialization in auth check');
-        }
-        
-        if (mounted) {
+        // Only update state if it actually changed
+        if (wasLoggedIn != newLoggedInState) {
           setState(() {
-            _isLoggedIn = true;
+            _isLoggedIn = newLoggedInState;
             _isLoading = false;
           });
-        }
-      } else {
-        // No user logged in
-        if (mounted) {
+          
+          if (newLoggedInState) {
+            // User signed in - handle asynchronously without blocking UI
+            _handleUserSignIn(user!);
+          } else {
+            // User signed out - clear state immediately
+            UserManager.clearUser();
+          }
+        } else if (_isLoading) {
+          // If still loading, just update loading state
           setState(() {
-            _isLoggedIn = false;
             _isLoading = false;
           });
         }
       }
+    });
+  }
+  
+  void _handleUserSignIn(User user) async {
+    final startTime = DateTime.now();
+    try {
+      // Set user immediately for UI responsiveness
+      UserManager.setFirebaseUser(user);
+      
+      if (kDebugMode) {
+        final duration = DateTime.now().difference(startTime);
+        print('User sign in completed in ${duration.inMilliseconds}ms');
+      }
+      
+      // Initialize chat service in background without blocking UI
+      _initializeChatServiceInBackground();
     } catch (e) {
-      print('Error during auth state check: $e');
-      if (mounted) {
-        setState(() {
-          _isLoggedIn = false;
-          _isLoading = false;
-        });
+      if (kDebugMode) {
+        print('Error handling user sign in: $e');
+      }
+    }
+  }
+  
+  void _initializeChatServiceInBackground() async {
+    try {
+      const bool skipChatInit = true; // Skip for performance
+      
+      if (!skipChatInit) {
+        await ChatService().initializeWithFirebaseUser().timeout(
+          Duration(seconds: 5), // Reduced timeout
+          onTimeout: () {
+            if (kDebugMode) {
+              print('Chat service initialization timed out, continuing...');
+            }
+          },
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Chat service initialization failed: $e');
       }
     }
   }
   
   void _onLoginSuccess() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await UserManager.setFirebaseUser(user);
-      
-      // Skip chat service initialization in debug mode if needed
-      const bool skipChatInit = true; // Set to true to skip chat initialization
-      
-      if (!skipChatInit) {
-        // Initialize chat service with Firebase user with timeout
-        try {
-          await ChatService().initializeWithFirebaseUser().timeout(
-            Duration(seconds: 10),
-            onTimeout: () {
-              print('Warning: Chat service initialization timed out, continuing anyway...');
-            },
-          );
-        } catch (e) {
-          print('Warning: Chat service initialization failed: $e, continuing anyway...');
-        }
-      } else {
-        print('Debug: Skipping chat service initialization in login success');
-      }
-    }
-    
+    // Login success is handled by auth state listener
+    // This method is kept for backward compatibility
     setState(() {
       _isLoggedIn = true;
     });
   }
   
   void _onLogout() async {
-    await FirebaseAuth.instance.signOut();
-    UserManager.clearUser();
-    setState(() {
-      _isLoggedIn = false;
-    });
+    final startTime = DateTime.now();
+    try {
+      // Use the comprehensive logout method for proper cleanup
+      await _authService.logoutWithCleanup();
+      
+      if (kDebugMode) {
+        final duration = DateTime.now().difference(startTime);
+        print('Logout completed in ${duration.inMilliseconds}ms');
+      }
+      
+      // State will be updated by auth state listener
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error during logout: $e');
+      }
+      // Force state update even if logout fails
+      setState(() {
+        _isLoggedIn = false;
+      });
+    }
   }
   
   @override

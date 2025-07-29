@@ -280,22 +280,31 @@ class _AppDrawerState extends State<AppDrawer> {
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
-                                  // Call the logout callback
-                widget.onLogout?.call();
+                  // Use comprehensive logout method
+                  await _authService.logoutWithCleanup();
                   
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Signed out successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  // Call the logout callback to update UI
+                  widget.onLogout?.call();
+                  
+                  // Check if widget is still mounted before showing SnackBar
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Signed out successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error signing out: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  // Check if widget is still mounted before showing SnackBar
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error signing out: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
             ),
