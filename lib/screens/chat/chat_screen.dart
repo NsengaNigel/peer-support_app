@@ -79,10 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
-=======
       drawer: AppDrawer(onLogout: null), // Pass null since this is not the main navigation
->>>>>>> final/changes
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
