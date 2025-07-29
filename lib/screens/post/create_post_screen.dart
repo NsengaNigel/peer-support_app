@@ -5,6 +5,7 @@ import '../../models/community.dart';
 import '../../services/post_service.dart';
 import '../../services/community_service.dart';
 import '../../widgets/community_selector.dart';
+import '../../widgets/home_return_arrow.dart';
 import '../../main.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -175,11 +176,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Post'),
-        backgroundColor: Colors.white, // Set background to white
-        foregroundColor: Colors.black, // Set text/icons to black
-        elevation: 1, // Add slight shadow
+      appBar: HomeReturnAppBar(
+        title: 'Create Post',
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),

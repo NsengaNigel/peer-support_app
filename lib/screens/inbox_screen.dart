@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/home_return_arrow.dart';
 
 class InboxScreen extends StatelessWidget {
   const InboxScreen({super.key});
@@ -34,7 +35,11 @@ class InboxScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inbox')),
+      appBar: HomeReturnAppBar(
+        title: 'Inbox',
+        backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
+      ),
       body: ListView.separated(
         itemCount: people.length,
         separatorBuilder: (context, index) => const Divider(height: 1),
@@ -96,7 +101,11 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.personName)),
+      appBar: HomeReturnAppBar(
+        title: widget.personName,
+        backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
+      ),
       body: Column(
         children: [
           Expanded(

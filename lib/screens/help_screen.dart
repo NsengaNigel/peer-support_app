@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/home_return_arrow.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -6,7 +7,11 @@ class HelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Help & Feedback')),
+      appBar: HomeReturnAppBar(
+        title: 'Help & Feedback',
+        backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
+      ),
       body: Center(child: Text('Help & Feedback')),
     );
   }

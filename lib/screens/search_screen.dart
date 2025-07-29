@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/user_manager.dart';
 import '../models/community.dart';
 import '../widgets/post_card.dart';
+import '../widgets/home_return_arrow.dart';
 import 'post_detail_screen.dart';
 import 'community_detail_screen.dart';
 
@@ -124,28 +125,34 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
+      appBar: HomeReturnAppBar(
+        title: '',
         backgroundColor: Color(0xFF00BCD4),
-        title: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Search posts, communities, users...',
-            hintStyle: TextStyle(color: Colors.white70),
-            border: InputBorder.none,
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear, color: Colors.white),
-                    onPressed: () {
-                      _searchController.clear();
-                      _performSearch('');
-                    },
-                  )
-                : null,
+        foregroundColor: Colors.white,
+        actions: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search posts, communities, users...',
+                hintStyle: TextStyle(color: Colors.white70),
+                border: InputBorder.none,
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(Icons.clear, color: Colors.white),
+                        onPressed: () {
+                          _searchController.clear();
+                          _performSearch('');
+                        },
+                      )
+                    : null,
+              ),
+              style: TextStyle(color: Colors.white),
+              onChanged: _performSearch,
+              autofocus: true,
+            ),
           ),
-          style: TextStyle(color: Colors.white),
-          onChanged: _performSearch,
-          autofocus: true,
-        ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
