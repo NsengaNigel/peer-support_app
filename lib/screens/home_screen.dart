@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../main.dart';
 import '../widgets/post_card.dart';
+import '../models/post.dart';
+import '../services/post_service.dart';
+import '../services/user_manager.dart';
 import 'post/post_feed_screen.dart';
 import 'post/create_post_screen.dart';
 import 'post_detail_screen.dart';
@@ -19,8 +22,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, dynamic>> _posts = [];
+  List<Post> _posts = [];
   bool _isLoading = true;
+  final PostService _postService = PostService();
 
   @override
   void initState() {
@@ -30,67 +34,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadPosts() async {
     try {
-      // Load posts from Firestore
-      final postsQuery = await FirebaseFirestore.instance
-          .collection('posts')
-          .limit(10) // Limit to 10 posts for home screen
-          .get();
-
-      // Convert to list and sort manually
-      final posts = postsQuery.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          ...data,
-        };
-      }).toList();
-
-      // Sort by creation date (newest first)
-      posts.sort((a, b) {
-        final aCreatedAt = a['createdAt'];
-        final bCreatedAt = b['createdAt'];
-        
-        DateTime? aDateTime;
-        DateTime? bDateTime;
-        
-        // Handle both Timestamp and String formats
-        if (aCreatedAt is Timestamp) {
-          aDateTime = aCreatedAt.toDate();
-        } else if (aCreatedAt is String) {
-          aDateTime = DateTime.tryParse(aCreatedAt);
-        }
-        
-        if (bCreatedAt is Timestamp) {
-          bDateTime = bCreatedAt.toDate();
-        } else if (bCreatedAt is String) {
-          bDateTime = DateTime.tryParse(bCreatedAt);
-        }
-        
-        if (aDateTime == null || bDateTime == null) return 0;
-        return bDateTime.compareTo(aDateTime);
+      setState(() {
+        _isLoading = true;
       });
 
-      // Add dummy posts if no real posts exist
-      if (posts.isEmpty) {
-        posts.addAll(postsNotifier.value);
-      }
+      // Load all posts from Firestore using PostService
+      final posts = await _postService.getAllPosts();
+      
+      // Limit to 10 posts for home screen
+      final limitedPosts = posts.take(10).toList();
 
       if (mounted) {
         setState(() {
-          _posts = posts;
+          _posts = limitedPosts;
           _isLoading = false;
         });
       }
     } catch (e) {
       print('Error loading posts: $e');
-      // Fallback to dummy posts
+      // Fallback to dummy posts if no real posts exist
       if (mounted) {
         setState(() {
-          _posts = postsNotifier.value;
+          _posts = [];
           _isLoading = false;
         });
       }
     }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+    
+    if (difference.inDays == 0) {
+      return 'Today';
+    } else if (difference.inDays == 1) {
+      return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} days ago';
+    } else {
+      return '${date.day}-${_getMonthName(date.month)}-${date.year}';
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
   }
 
   @override
@@ -242,41 +234,55 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }),
                   
-                  // Highlighted post
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFE3F2FD), // Light blue
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.grey[300],
-                          child: Icon(Icons.person, color: Colors.grey[600]),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'is ML different from AI??',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black87,
+                  // Highlighted post (show first real post if available)
+                  if (_posts.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        // Navigate to post detail screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PostDetailScreen(
+                              postId: _posts.first.id,
                             ),
                           ),
+                        );
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFE3F2FD), // Light blue
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        IconButton(
-                          icon: Icon(Icons.close, size: 20),
-                          onPressed: () {
-                            // Dismiss highlighted post
-                          },
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey[300],
+                              child: Icon(Icons.person, color: Colors.grey[600]),
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _posts.first.title,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.close, size: 20),
+                              onPressed: () {
+                                // Dismiss highlighted post
+                              },
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
                   
                   // General Community Section
                   _buildSectionHeader('General Community', () {
@@ -312,15 +318,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     )
                   else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _posts.length,
-                      itemBuilder: (context, index) {
-                        final post = _posts[index];
-                        return _buildCommunityPost(post);
-                      },
+                    RefreshIndicator(
+                      onRefresh: _loadPosts,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _posts.length,
+                        itemBuilder: (context, index) {
+                          final post = _posts[index];
+                          return _buildCommunityPost(post);
+                        },
+                      ),
                     ),
                   
                   SizedBox(height: 100), // Space for FAB
@@ -418,69 +427,69 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCommunityPost(Map<String, dynamic> post) {
-    // Sample data to match the screenshot
-    final sampleAuthors = ['Nivin Ps', 'Member 3', 'Member 5', 'Member 2'];
-    final sampleTitles = [
-      'Is ML different from AI?',
-      'I can\'t stop procrastinating',
-      'how does one become a Dev?',
-      'Anyone to help me with this?...'
-    ];
-    
-    final index = _posts.indexOf(post) % sampleAuthors.length;
-    final author = sampleAuthors[index];
-    final title = sampleTitles[index];
-    
-    return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.orange,
-            child: Icon(Icons.person, color: Colors.white, size: 20),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  author,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+  Widget _buildCommunityPost(Post post) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to post detail screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PostDetailScreen(
+              postId: post.id,
             ),
           ),
-          Text(
-            '12-Jan-2025',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.orange,
+              child: Icon(Icons.person, color: Colors.white, size: 20),
             ),
-          ),
-        ],
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    post.authorUsername,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    post.title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              _formatDate(post.createdAt),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
