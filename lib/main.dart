@@ -138,84 +138,34 @@ class WebAuthWrapper extends StatefulWidget {
 }
 
 class _WebAuthWrapperState extends State<WebAuthWrapper> {
-  bool _isLoggedIn = false;
   bool _isLoading = true;
+  final ChatService _chatService = ChatService();
   
   @override
   void initState() {
     super.initState();
-    _checkAuthState();
-  }
-  
-  void _checkAuthState() async {
-    // Wait a bit to ensure Firebase is fully initialized
-    await Future.delayed(Duration(milliseconds: 100));
-    
-    try {
-      // Check if user is already logged in with Firebase Auth
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        // User is logged in, sync with UserManager and ChatService
-        await UserManager.setFirebaseUser(user);
-        
-        // Skip chat service initialization in debug mode if needed
-        const bool skipChatInit = true; // Set to true to skip chat initialization
-        
-        if (!skipChatInit) {
-          // Initialize chat service with timeout
-          try {
-            await ChatService().initializeWithFirebaseUser().timeout(
-              Duration(seconds: 10),
-              onTimeout: () {
-                print('Warning: Chat service initialization timed out during auth check, continuing anyway...');
-              },
-            );
-          } catch (e) {
-            print('Warning: Chat service initialization failed during auth check: $e, continuing anyway...');
-          }
-        } else {
-          print('Debug: Skipping chat service initialization in auth check');
-        }
-        
-        if (mounted) {
-          setState(() {
-            _isLoggedIn = true;
-            _isLoading = false;
-          });
-        }
-      } else {
-        // No user logged in
-        if (mounted) {
-          setState(() {
-            _isLoggedIn = false;
-            _isLoading = false;
-          });
-        }
-      }
-    } catch (e) {
-      print('Error during auth state check: $e');
+    // Reduce initial delay to improve responsiveness
+    Future.delayed(Duration(milliseconds: 50), () {
       if (mounted) {
         setState(() {
-          _isLoggedIn = false;
           _isLoading = false;
         });
       }
-    }
+    });
   }
-  
-  void _onLoginSuccess() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+
+  Future<void> _initializeUser(User user) async {
+    try {
       await UserManager.setFirebaseUser(user);
       
       // Skip chat service initialization in debug mode if needed
       const bool skipChatInit = true; // Set to true to skip chat initialization
       
       if (!skipChatInit) {
-        // Initialize chat service with Firebase user with timeout
+        // Initialize chat service with shorter timeout
         try {
-          await ChatService().initializeWithFirebaseUser().timeout(
-            Duration(seconds: 10),
+          await _chatService.initializeWithFirebaseUser().timeout(
+            Duration(seconds: 5),
             onTimeout: () {
               print('Warning: Chat service initialization timed out, continuing anyway...');
             },
@@ -224,21 +174,29 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
           print('Warning: Chat service initialization failed: $e, continuing anyway...');
         }
       } else {
-        print('Debug: Skipping chat service initialization in login success');
+        print('Debug: Skipping chat service initialization in auth check');
       }
+    } catch (e) {
+      print('Error initializing user: $e');
     }
-    
-    setState(() {
-      _isLoggedIn = true;
-    });
+  }
+  
+  Future<void> _cleanupUser() async {
+    try {
+      UserManager.clearUser();
+      // Add any additional cleanup needed
+    } catch (e) {
+      print('Error cleaning up user: $e');
+    }
   }
   
   void _onLogout() async {
-    await FirebaseAuth.instance.signOut();
-    UserManager.clearUser();
-    setState(() {
-      _isLoggedIn = false;
-    });
+    try {
+      UserManager.clearUser();
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      print('Error during logout: $e');
+    }
   }
   
   @override
@@ -266,11 +224,46 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
       );
     }
     
-    if (_isLoggedIn) {
-      return MainNavigation(onLogout: _onLogout);
-    } else {
-      return LoginScreen(onLoginSuccess: _onLoginSuccess);
-    }
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Only show loading indicator for initial connection
+        if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color(0xFF00BCD4),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      color: Color(0xFF00BCD4),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        final user = snapshot.data;
+        if (user != null) {
+          // Initialize user data when auth state changes to logged in
+          // Use Future.microtask to avoid blocking the UI
+          Future.microtask(() => _initializeUser(user));
+          return MainNavigation(onLogout: _onLogout);
+        } else {
+          // Clean up when logged out
+          Future.microtask(() => _cleanupUser());
+          return LoginScreen(onLoginSuccess: () {});
+        }
+      },
+    );
   }
 }
 
