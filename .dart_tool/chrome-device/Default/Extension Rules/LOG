@@ -1,2 +1,4 @@
-2025/07/27-19:26:56.697 7498 Creating DB /private/var/folders/py/3s0yj3rj4q37cxjz4m55c2pm0000gp/T/flutter_tools.D0SBPD/flutter_tools_chrome_device.OBbSKM/Default/Extension Rules since it was missing.
-2025/07/27-19:26:56.718 7498 Reusing MANIFEST /private/var/folders/py/3s0yj3rj4q37cxjz4m55c2pm0000gp/T/flutter_tools.D0SBPD/flutter_tools_chrome_device.OBbSKM/Default/Extension Rules/MANIFEST-000001
+2025/07/29-10:35:20.700 516c Creating DB C:\Users\Hello\AppData\Local\Temp\flutter_tools.f057c820\flutter_tools_chrome_device.666a6a65\Default\Extension Rules since it was missing.
+2025/07/29-10:35:20.714 516c Reusing MANIFEST C:\Users\Hello\AppData\Local\Temp\flutter_tools.f057c820\flutter_tools_chrome_device.666a6a65\Default\Extension Rules/MANIFEST-000001
+2025/07/29-10:35:20.715 516c Recovering log #3
+2025/07/29-10:35:20.715 516c Reusing old log C:\Users\Hello\AppData\Local\Temp\flutter_tools.f057c820\flutter_tools_chrome_device.666a6a65\Default\Extension Rules/000003.log 

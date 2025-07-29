@@ -1,3 +1,4 @@
-2025/07/28-19:02:12.173 175ea Reusing MANIFEST /private/var/folders/py/3s0yj3rj4q37cxjz4m55c2pm0000gp/T/flutter_tools.R8AdjU/flutter_tools_chrome_device.ZGLm7C/Default/Extension State/MANIFEST-000001
-2025/07/28-19:02:12.174 175ea Recovering log #3
-2025/07/28-19:02:12.174 175ea Reusing old log /private/var/folders/py/3s0yj3rj4q37cxjz4m55c2pm0000gp/T/flutter_tools.R8AdjU/flutter_tools_chrome_device.ZGLm7C/Default/Extension State/000003.log 
+2025/07/29-10:35:20.938 1958 Creating DB C:\Users\Hello\AppData\Local\Temp\flutter_tools.f057c820\flutter_tools_chrome_device.666a6a65\Default\Extension State since it was missing.
+2025/07/29-10:35:20.949 1958 Reusing MANIFEST C:\Users\Hello\AppData\Local\Temp\flutter_tools.f057c820\flutter_tools_chrome_device.666a6a65\Default\Extension State/MANIFEST-000001
+2025/07/29-10:35:20.950 1958 Recovering log #3
+2025/07/29-10:35:20.951 1958 Reusing old log C:\Users\Hello\AppData\Local\Temp\flutter_tools.f057c820\flutter_tools_chrome_device.666a6a65\Default\Extension State/000003.log 
