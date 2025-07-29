@@ -7,6 +7,9 @@ import 'post/create_post_screen.dart';
 import 'post_detail_screen.dart';
 import 'user_profile_screen.dart';
 import 'community_detail_screen.dart';
+import 'communities_screen.dart';
+import 'chat/chat_list_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -92,146 +95,390 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Color(0xFFF5F7FA),
-      child: Column(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
         children: [
-          // Latest Posts Header
+          // Header with gradient background
           Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Latest Posts',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Navigate to post feed screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PostFeedScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'See all',
-                    style: TextStyle(
-                      color: Color(0xFF00BCD4),
-                      fontWeight: FontWeight.w600,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF00BCD4), // Teal
+                  Color(0xFF2196F3), // Blue
+                ],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // Top section with title and profile
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.menu, color: Colors.white),
+                          onPressed: () {
+                            Scaffold.of(context).openDrawer();
+                          },
+                        ),
+                        Text(
+                          'General page',
+                          style: TextStyle(
+                            color: Colors.grey[300],
+                            fontSize: 12,
+                          ),
+                        ),
+                        Spacer(),
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.orange, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: Colors.orange,
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  
+                  // Main title
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Text(
+                          'PS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'peer support',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: 20),
+                  
+                  // Navigation icons
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildNavItem(
+                          icon: Icons.groups,
+                          label: 'Communities',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => CommunitiesScreen()),
+                          ),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.post_add,
+                          label: 'Post',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => CreatePostScreen()),
+                          ),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.chat_bubble_outline,
+                          label: 'Chats',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ChatListScreen()),
+                          ),
+                        ),
+                        _buildNavItem(
+                          icon: Icons.person,
+                          label: 'Profile',
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => ProfileScreen()),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
           
-          // Posts List
+          // Content sections
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _posts.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.post_add,
-                              size: 64,
-                              color: Colors.grey[400],
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Latest Posts Section
+                  _buildSectionHeader('Latest Posts', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => PostFeedScreen()),
+                    );
+                  }),
+                  
+                  // Highlighted post
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFE3F2FD), // Light blue
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.grey[300],
+                          child: Icon(Icons.person, color: Colors.grey[600]),
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'is ML different from AI??',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, size: 20),
+                          onPressed: () {
+                            // Dismiss highlighted post
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // General Community Section
+                  _buildSectionHeader('General Community', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => PostFeedScreen()),
+                    );
+                  }),
+                  
+                  // Community posts list
+                  if (_isLoading)
+                    Center(child: CircularProgressIndicator())
+                  else if (_posts.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Column(
+                          children: [
+                            Icon(Icons.post_add, size: 64, color: Colors.grey[400]),
+                            SizedBox(height: 16),
+                            Text(
                               'No posts yet',
                               style: TextStyle(fontSize: 18, color: Colors.grey),
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
+                            SizedBox(height: 8),
+                            Text(
                               'Be the first to share something!',
                               style: TextStyle(fontSize: 14, color: Colors.grey),
                               textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 20),
-                            ElevatedButton.icon(
-                              onPressed: () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const CreatePostScreen(),
-                                  ),
-                                );
-                                // Reload posts after creating a new one
-                                if (result == true) {
-                                  _loadPosts();
-                                }
-                              },
-                              icon: Icon(Icons.add),
-                              label: Text('Create First Post'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF00BCD4),
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
                           ],
                         ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadPosts,
-                        child: ListView.builder(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _posts.length,
-                          itemBuilder: (context, index) {
-                            final post = _posts[index];
-                            return PostCard(
-                              post: post,
-                              onTap: () {
-                                // Navigate to post detail screen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PostDetailScreen(
-                                      postId: post['id'] ?? '',
-                                    ),
-                                  ),
-                                );
-                              },
-                              onCommunityTap: () {
-                                // Navigate to community detail screen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CommunityDetailScreen(
-                                      communityId: post['communityId'] ?? 'unknown',
-                                    ),
-                                  ),
-                                );
-                              },
-                              onUserTap: () {
-                                // Navigate to user profile screen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserProfileScreen(
-                                      userId: post['authorId'] ?? 'unknown',
-                                    ),
-                                  ),
-                                );
-                              },
-                              onPostDeleted: () {
-                                // Refresh posts when admin deletes a post
-                                _loadPosts();
-                              },
-                            );
-                          },
-                        ),
                       ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _posts.length,
+                      itemBuilder: (context, index) {
+                        final post = _posts[index];
+                        return _buildCommunityPost(post);
+                      },
+                    ),
+                  
+                  SizedBox(height: 100), // Space for FAB
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: Container(
+        margin: EdgeInsets.only(bottom: 16),
+        child: FloatingActionButton.extended(
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CreatePostScreen()),
+            );
+            if (result == true) {
+              _loadPosts();
+            }
+          },
+          backgroundColor: Color(0xFF00BCD4),
+          foregroundColor: Colors.white,
+          icon: Icon(Icons.add),
+          label: Text('Post'),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.2),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          GestureDetector(
+            onTap: onSeeAll,
+            child: Text(
+              'See all',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCommunityPost(Map<String, dynamic> post) {
+    // Sample data to match the screenshot
+    final sampleAuthors = ['Nivin Ps', 'Member 3', 'Member 5', 'Member 2'];
+    final sampleTitles = [
+      'Is ML different from AI?',
+      'I can\'t stop procrastinating',
+      'how does one become a Dev?',
+      'Anyone to help me with this?...'
+    ];
+    
+    final index = _posts.indexOf(post) % sampleAuthors.length;
+    final author = sampleAuthors[index];
+    final title = sampleTitles[index];
+    
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.orange,
+            child: Icon(Icons.person, color: Colors.white, size: 20),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  author,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '12-Jan-2025',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
           ),
         ],
       ),
