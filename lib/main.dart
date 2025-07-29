@@ -260,6 +260,42 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
     }
   }
   
+  Future<void> _initializeUser(User user) async {
+    try {
+      await UserManager.setFirebaseUser(user);
+      
+      // Skip chat service initialization in debug mode if needed
+      const bool skipChatInit = true; // Set to true to skip chat initialization
+      
+      if (!skipChatInit) {
+        // Initialize chat service with shorter timeout
+        try {
+          await _chatService.initializeWithFirebaseUser().timeout(
+            Duration(seconds: 5),
+            onTimeout: () {
+              print('Warning: Chat service initialization timed out, continuing anyway...');
+            },
+          );
+        } catch (e) {
+          print('Warning: Chat service initialization failed: $e, continuing anyway...');
+        }
+      } else {
+        print('Debug: Skipping chat service initialization in auth check');
+      }
+    } catch (e) {
+      print('Error initializing user: $e');
+    }
+  }
+  
+  Future<void> _cleanupUser() async {
+    try {
+      UserManager.clearUser();
+      // Add any additional cleanup needed
+    } catch (e) {
+      print('Error cleaning up user: $e');
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
