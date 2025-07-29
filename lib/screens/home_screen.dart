@@ -13,6 +13,7 @@ import 'community_detail_screen.dart';
 import 'communities_screen.dart';
 import 'chat/chat_list_screen.dart';
 import 'profile_screen.dart';
+import 'search_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -150,22 +151,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Text(
-                          'PS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Text(
+                            'peer support',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Text(
-                          'peer support',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        IconButton(
+                          icon: Icon(Icons.search, color: Colors.white, size: 28),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => SearchScreen()),
+                            );
+                          },
                         ),
                       ],
                     ),
