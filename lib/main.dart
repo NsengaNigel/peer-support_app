@@ -143,6 +143,7 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
   bool _isLoggedIn = false;
   bool _isLoading = true;
   final AuthService _authService = AuthService();
+  final ChatService _chatService = ChatService();
   StreamSubscription<User?>? _authStateSubscription;
   
   @override
@@ -212,7 +213,7 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
       const bool skipChatInit = true; // Skip for performance
       
       if (!skipChatInit) {
-        await ChatService().initializeWithFirebaseUser().timeout(
+        await _chatService.initializeWithFirebaseUser().timeout(
           Duration(seconds: 5), // Reduced timeout
           onTimeout: () {
             if (kDebugMode) {
@@ -284,11 +285,46 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
       );
     }
     
-    if (_isLoggedIn) {
-      return MainNavigation(onLogout: _onLogout);
-    } else {
-      return LoginScreen(onLoginSuccess: _onLoginSuccess);
-    }
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Only show loading indicator for initial connection
+        if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: Color(0xFF00BCD4),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      color: Color(0xFF00BCD4),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        
+        final user = snapshot.data;
+        if (user != null) {
+          // Initialize user data when auth state changes to logged in
+          // Use Future.microtask to avoid blocking the UI
+          Future.microtask(() => _initializeUser(user));
+          return MainNavigation(onLogout: _onLogout);
+        } else {
+          // Clean up when logged out
+          Future.microtask(() => _cleanupUser());
+          return LoginScreen(onLoginSuccess: () {});
+        }
+      },
+    );
   }
 }
 

@@ -73,6 +73,73 @@ class _MainNavigationState extends State<MainNavigation> {
           });
         },
       ),
+      bottomNavigationBar: StreamBuilder<List<ChatConversation>>(
+        stream: _chatService.getConversationsStream(),
+        builder: (context, snapshot) {
+          final conversations = snapshot.data ?? [];
+          final currentUserId = _chatService.currentUserId;
+          final totalUnread = currentUserId != null ? conversations.fold<int>(
+            0,
+            (sum, conv) => sum + conv.getUnreadCount(currentUserId),
+          ) : 0;
+
+          return BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: _onTabTapped,
+            type: BottomNavigationBarType.fixed,
+            items: [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.groups),
+                label: 'Communities',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.post_add),
+                label: 'Post',
+              ),
+              BottomNavigationBarItem(
+                icon: Stack(
+                  children: [
+                    Icon(Icons.chat_bubble_outline),
+                    if (totalUnread > 0)
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                          padding: EdgeInsets.all(1),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 12,
+                            minHeight: 12,
+                          ),
+                          child: Text(
+                            totalUnread.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                label: 'Chats',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 } 

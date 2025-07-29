@@ -79,10 +79,28 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeReturnAppBar(
-        title: widget.otherUserName,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(widget.otherUserName),
         backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
+        actions: [
+          StreamBuilder<List<ChatMessage>>(
+            stream: _chatService.getMessagesStream(widget.otherUserId),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox.shrink();
+              return IconButton(
+                icon: Icon(Icons.home),
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

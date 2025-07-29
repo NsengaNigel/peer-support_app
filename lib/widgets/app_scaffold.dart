@@ -7,6 +7,7 @@ class AppScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final Color? backgroundColor;
   final VoidCallback? onLogout;
+  final Widget? bottomNavigationBar;
 
   const AppScaffold({
     super.key,
@@ -15,6 +16,7 @@ class AppScaffold extends StatelessWidget {
     this.floatingActionButton,
     this.backgroundColor,
     this.onLogout,
+    this.bottomNavigationBar,
   });
 
   @override
@@ -25,6 +27,7 @@ class AppScaffold extends StatelessWidget {
       drawer: AppDrawer(onLogout: onLogout),
       body: body,
       floatingActionButton: floatingActionButton,
+      bottomNavigationBar: bottomNavigationBar,
     );
   }
 } 
