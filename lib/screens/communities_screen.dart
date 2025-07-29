@@ -7,6 +7,7 @@ import '../services/user_manager.dart';
 import '../models/user_model.dart';
 import '../widgets/admin_actions.dart';
 import '../widgets/home_return_arrow.dart';
+import '../widgets/app_scaffold.dart';
 
 class CommunitiesScreen extends StatefulWidget {
   const CommunitiesScreen({super.key});
@@ -303,7 +304,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: HomeReturnAppBar(
         title: 'Communities',

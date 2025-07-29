@@ -4,6 +4,7 @@ import '../services/community_service.dart';
 import '../services/user_manager.dart';
 import '../services/history_service.dart';
 import '../widgets/home_return_arrow.dart';
+import '../widgets/app_scaffold.dart';
 
 class CommunityDetailScreen extends StatefulWidget {
   final String communityId;
@@ -222,12 +223,12 @@ class _CommunityDetailScreenState extends State<CommunityDetailScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return const AppScaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Color(0xFFF5F7FA),
       appBar: HomeReturnAppBar(
         title: _communityName,

@@ -7,6 +7,7 @@ import '../screens/profile_screen.dart';
 import '../screens/search_screen.dart';
 import '../services/chat_service.dart';
 import '../models/chat_conversation.dart';
+import '../widgets/app_scaffold.dart';
 import 'app_drawer.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -61,8 +62,8 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: AppDrawer(onLogout: widget.onLogout),
+    return AppScaffold(
+      onLogout: widget.onLogout,
       body: PageView(
         controller: _pageController,
         children: _screens,
