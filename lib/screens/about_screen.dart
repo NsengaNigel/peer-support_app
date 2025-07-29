@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/home_return_arrow.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -6,7 +7,11 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('About')),
+      appBar: HomeReturnAppBar(
+        title: 'About',
+        backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
+      ),
       body: Center(child: Text('About UniReddit')),
     );
   }

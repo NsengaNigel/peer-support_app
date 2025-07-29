@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/user_manager.dart';
 import '../services/comments_service.dart';
 import '../models/comment.dart';
+import '../widgets/home_return_arrow.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -558,9 +559,10 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('My Posts'),
+      appBar: HomeReturnAppBar(
+        title: 'My Posts',
         backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<DocumentSnapshot>>(
         future: _postsFuture,
@@ -655,9 +657,10 @@ class _MyCommentsScreenState extends State<MyCommentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('My Comments'),
+      appBar: HomeReturnAppBar(
+        title: 'My Comments',
         backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Comment>>(
         future: _commentsFuture,
@@ -753,9 +756,10 @@ class _MyCommunitiesScreenState extends State<MyCommunitiesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Communities'),
+      appBar: HomeReturnAppBar(
+        title: 'My Communities',
         backgroundColor: Color(0xFF00BCD4),
+        foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<DocumentSnapshot>>(
         future: _communitiesFuture,
@@ -820,9 +824,10 @@ class SavedScreen extends StatelessWidget {
     // For now, we'll show an empty state since saved posts functionality needs to be implemented
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
+      appBar: HomeReturnAppBar(
+        title: 'Saved Posts',
         backgroundColor: Color(0xFF00BCD4),
-        title: const Text('Saved Posts'),
+        foregroundColor: Colors.white,
       ),
       body: Center(
         child: Column(

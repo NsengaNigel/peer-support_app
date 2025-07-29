@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/user_manager.dart';
+import '../widgets/home_return_arrow.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -88,9 +89,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
+      appBar: HomeReturnAppBar(
+        title: 'Edit Profile',
         backgroundColor: Color(0xFF00BCD4),
-        title: const Text('Edit Profile'),
+        foregroundColor: Colors.white,
         actions: [
           TextButton(
             onPressed: _isLoading ? null : _saveProfile,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/saved_posts_service.dart';
 import '../services/user_manager.dart';
 import '../widgets/post_card.dart';
+import '../widgets/home_return_arrow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SavedPostsScreen extends StatefulWidget {
@@ -73,8 +74,8 @@ class _SavedPostsScreenState extends State<SavedPostsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text('Saved Posts'),
+      appBar: HomeReturnAppBar(
+        title: 'Saved Posts',
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
         actions: [
