@@ -62,6 +62,7 @@ class UserManager {
   // Set Firebase user (for mobile) with admin support
   static Future<void> setFirebaseUser(dynamic firebaseUser) async {
     if (firebaseUser != null) {
+      // Set basic user info immediately for UI responsiveness
       _currentUser = AppUser(
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? '',
@@ -70,21 +71,19 @@ class UserManager {
         displayName: firebaseUser.displayName ?? firebaseUser.email?.split('@')[0],
       );
       
-      // Load or create UserModel with admin roles
-      await _loadUserModel(firebaseUser);
-      // Ensure user is also in chat_users collection
-      await ChatService().getOrCreateUser(
-        firebaseUser.uid,
-        firebaseUser.displayName ?? firebaseUser.email?.split('@')[0] ?? 'User',
-      );
+      // Load user model in background without blocking UI
+      _loadUserModelInBackground(firebaseUser);
+      
+      // Ensure user is also in chat_users collection (non-blocking)
+      _ensureChatUserExists(firebaseUser);
     } else {
       _currentUser = null;
       _currentUserModel = null;
     }
   }
   
-  // Load user model from Firestore or create new one
-  static Future<void> _loadUserModel(User firebaseUser) async {
+  // Load user model from Firestore or create new one (background task)
+  static Future<void> _loadUserModelInBackground(User firebaseUser) async {
     try {
       final userDoc = await _firestore.collection('users').doc(firebaseUser.uid).get();
       
@@ -99,9 +98,13 @@ class UserManager {
           print('Is super admin: ${_currentUserModel!.isSuperAdmin}');
         }
         
-        // Update last login time
-        await _firestore.collection('users').doc(firebaseUser.uid).update({
+        // Update last login time (non-blocking)
+        _firestore.collection('users').doc(firebaseUser.uid).update({
           'lastLoginTime': Timestamp.fromDate(DateTime.now()),
+        }).catchError((e) {
+          if (kDebugMode) {
+            print('Warning: Failed to update last login time: $e');
+          }
         });
       } else {
         // New user, create default UserModel
@@ -114,8 +117,13 @@ class UserManager {
           lastLoginTime: DateTime.now(),
         );
         
-        // Save to Firestore
-        await _firestore.collection('users').doc(firebaseUser.uid).set(_currentUserModel!.toMap());
+        // Save to Firestore (non-blocking)
+        _firestore.collection('users').doc(firebaseUser.uid).set(_currentUserModel!.toMap())
+            .catchError((e) {
+          if (kDebugMode) {
+            print('Warning: Failed to save user model: $e');
+          }
+        });
         
         if (kDebugMode) {
           print('Created new user profile for: ${firebaseUser.email}');
@@ -137,10 +145,28 @@ class UserManager {
     }
   }
   
+  // Ensure chat user exists (non-blocking)
+  static Future<void> _ensureChatUserExists(User firebaseUser) async {
+    try {
+      await ChatService().getOrCreateUser(
+        firebaseUser.uid,
+        firebaseUser.displayName ?? firebaseUser.email?.split('@')[0] ?? 'User',
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Warning: Failed to ensure chat user exists: $e');
+      }
+    }
+  }
+  
   // Clear user
   static void clearUser() {
     _currentUser = null;
     _currentUserModel = null;
+    
+    if (kDebugMode) {
+      print('UserManager: User state cleared');
+    }
   }
   
   // Update user info
@@ -175,6 +201,10 @@ class UserManager {
         final userDoc = await _firestore.collection('users').doc(_currentUser!.uid).get();
         if (userDoc.exists) {
           _currentUserModel = UserModel.fromSnapshot(userDoc);
+          
+          if (kDebugMode) {
+            print('UserManager: User model refreshed from Firestore');
+          }
         }
       } catch (e) {
         if (kDebugMode) {
@@ -209,5 +239,17 @@ class UserManager {
   }
   
   // Get user role display name
-  static String get currentUserRoleDisplay => _currentUserModel?.roleDisplayName ?? 'User';
+  static String get currentUserRoleDisplay {
+    if (_currentUserModel == null) return 'User';
+    return _currentUserModel!.role.name;
+  }
+  
+  // Check if user is logged in
+  static bool get isLoggedIn => _currentUser != null;
+  
+  // Get current user email
+  static String? get currentUserEmail => _currentUser?.email;
+  
+  // Get current user display name
+  static String? get currentUserDisplayName => _currentUser?.displayName;
 } 

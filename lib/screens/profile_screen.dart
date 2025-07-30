@@ -29,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this); // Fixed: Changed from 3 to 4
     _loadUserData();
   }
 
@@ -278,22 +278,32 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
-                  // Call the logout callback
+                  // Use comprehensive logout method
+                  final authService = AuthService();
+                  await authService.logoutWithCleanup();
+                  
+                  // Call the logout callback to update UI
                   widget.onLogout?.call();
                   
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Signed out successfully'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  // Check if widget is still mounted before showing SnackBar
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Signed out successfully'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error signing out: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  // Check if widget is still mounted before showing SnackBar
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error signing out: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
             ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../models/chat_message.dart';
 import '../../services/chat_service.dart';
-import '../../widgets/home_return_arrow.dart';
+import '../../navigation/app_drawer.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -79,6 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: AppDrawer(onLogout: null), // Pass null since this is not the main navigation
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 // Firebase imports (for Authentication and Firestore chat)
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +11,7 @@ import 'services/chat_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'navigation/app_router.dart';
 import 'navigation/main_navigation.dart';
+import 'services/auth_service.dart'; // Added import for AuthService
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -138,22 +140,126 @@ class WebAuthWrapper extends StatefulWidget {
 }
 
 class _WebAuthWrapperState extends State<WebAuthWrapper> {
+  bool _isLoggedIn = false;
   bool _isLoading = true;
+  final AuthService _authService = AuthService();
   final ChatService _chatService = ChatService();
+  StreamSubscription<User?>? _authStateSubscription;
   
   @override
   void initState() {
     super.initState();
-    // Reduce initial delay to improve responsiveness
-    Future.delayed(Duration(milliseconds: 50), () {
+    _setupAuthStateListener();
+  }
+  
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
+  }
+  
+  void _setupAuthStateListener() {
+    _authStateSubscription = _authService.authStateChanges.listen((User? user) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        final wasLoggedIn = _isLoggedIn;
+        final newLoggedInState = user != null;
+        
+        // Only update state if it actually changed
+        if (wasLoggedIn != newLoggedInState) {
+          setState(() {
+            _isLoggedIn = newLoggedInState;
+            _isLoading = false;
+          });
+          
+          if (newLoggedInState) {
+            // User signed in - handle asynchronously without blocking UI
+            _handleUserSignIn(user!);
+          } else {
+            // User signed out - clear state immediately
+            UserManager.clearUser();
+          }
+        } else if (_isLoading) {
+          // If still loading, just update loading state
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     });
   }
-
+  
+  void _handleUserSignIn(User user) async {
+    final startTime = DateTime.now();
+    try {
+      // Set user immediately for UI responsiveness
+      UserManager.setFirebaseUser(user);
+      
+      if (kDebugMode) {
+        final duration = DateTime.now().difference(startTime);
+        print('User sign in completed in ${duration.inMilliseconds}ms');
+      }
+      
+      // Initialize chat service in background without blocking UI
+      _initializeChatServiceInBackground();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error handling user sign in: $e');
+      }
+    }
+  }
+  
+  void _initializeChatServiceInBackground() async {
+    try {
+      const bool skipChatInit = true; // Skip for performance
+      
+      if (!skipChatInit) {
+        await _chatService.initializeWithFirebaseUser().timeout(
+          Duration(seconds: 5), // Reduced timeout
+          onTimeout: () {
+            if (kDebugMode) {
+              print('Chat service initialization timed out, continuing...');
+            }
+          },
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Chat service initialization failed: $e');
+      }
+    }
+  }
+  
+  void _onLoginSuccess() async {
+    // Login success is handled by auth state listener
+    // This method is kept for backward compatibility
+    setState(() {
+      _isLoggedIn = true;
+    });
+  }
+  
+  void _onLogout() async {
+    final startTime = DateTime.now();
+    try {
+      // Use the comprehensive logout method for proper cleanup
+      await _authService.logoutWithCleanup();
+      
+      if (kDebugMode) {
+        final duration = DateTime.now().difference(startTime);
+        print('Logout completed in ${duration.inMilliseconds}ms');
+      }
+      
+      // State will be updated by auth state listener
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error during logout: $e');
+      }
+      // Force state update even if logout fails
+      setState(() {
+        _isLoggedIn = false;
+      });
+    }
+  }
+  
   Future<void> _initializeUser(User user) async {
     try {
       await UserManager.setFirebaseUser(user);
@@ -187,15 +293,6 @@ class _WebAuthWrapperState extends State<WebAuthWrapper> {
       // Add any additional cleanup needed
     } catch (e) {
       print('Error cleaning up user: $e');
-    }
-  }
-  
-  void _onLogout() async {
-    try {
-      UserManager.clearUser();
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      print('Error during logout: $e');
     }
   }
   

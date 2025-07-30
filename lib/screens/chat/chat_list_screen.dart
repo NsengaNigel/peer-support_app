@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../models/chat_conversation.dart';
 import '../../services/chat_service.dart';
-import '../../widgets/home_return_arrow.dart';
+import '../../navigation/app_drawer.dart';
 import 'chat_screen.dart';
 import 'user_search_screen.dart';
 import '../../navigation/app_drawer.dart';
@@ -21,9 +21,16 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       drawer: AppDrawer(),
       appBar: AppBar(
         backgroundColor: const Color(0xFF26A69A),
+=======
+      drawer: AppDrawer(onLogout: null), // Pass null since this is not the main navigation
+      appBar: AppBar(
+        title: const Text('Chats'),
+        backgroundColor: const Color(0xFF26A69A), // Teal color
+>>>>>>> 5d6986edafb881b93404714137d73ef5134f231c
         foregroundColor: Colors.white,
         leading: Builder(
           builder: (context) => IconButton(

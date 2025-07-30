@@ -459,10 +459,15 @@ class ChatService {
         'isOnline': isOnline,
         'lastSeen': isOnline ? null : FieldValue.serverTimestamp(),
       });
+      
+      if (kDebugMode) {
+        print('ChatService: Updated user $userId status to ${isOnline ? 'online' : 'offline'}');
+      }
     } catch (e) {
       if (kDebugMode) {
         print('Error updating user status: $e');
       }
+      rethrow;
     }
   }
 
@@ -471,6 +476,22 @@ class ChatService {
     // Update user status to offline
     if (_currentUserId != null) {
       updateUserStatus(_currentUserId!, isOnline: false);
+    }
+  }
+  
+  // Clean up resources for logout
+  Future<void> cleanupForLogout() async {
+    if (_currentUserId != null) {
+      try {
+        await updateUserStatus(_currentUserId!, isOnline: false);
+        if (kDebugMode) {
+          print('ChatService: Cleaned up for logout');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Warning: Failed to update user status during logout: $e');
+        }
+      }
     }
   }
 

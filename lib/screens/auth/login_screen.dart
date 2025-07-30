@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication package
 import 'signup_screen.dart';
+import 'package:flutter/foundation.dart'; // Import for kDebugMode
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onLoginSuccess; // Callback to notify when login succeeds
@@ -58,10 +59,14 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
 
-      // Check if email is verified
+      // Check if email is verified (simplified check)
       if (userCredential.user != null && !userCredential.user!.emailVerified) {
-        // If email not verified, send verification email
-        await userCredential.user!.sendEmailVerification();
+        // If email not verified, send verification email (non-blocking)
+        userCredential.user!.sendEmailVerification().catchError((e) {
+          if (kDebugMode) {
+            print('Warning: Failed to send verification email: $e');
+          }
+        });
 
         if (mounted) {
           // Show warning SnackBar to user
@@ -74,8 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         }
-
-        // Note: You can decide here if you want to block login until verified
       } else {
         // Email verified or verification not required, login successful
         if (mounted) {
@@ -326,46 +329,40 @@ class _LoginScreenState extends State<LoginScreen> {
                               SizedBox(height: 16),
                             ],
 
-                            // Login button with loading spinner
+                            // Login button
                             SizedBox(
-                              height: 56,
+                              width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: _isLoading ? null : _login, // Disable button when loading
+                                onPressed: _isLoading ? null : _login,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color(0xFF00BCD4),
                                   foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  elevation: 2,
                                 ),
                                 child: _isLoading
                                     ? Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           SizedBox(
-                                            height: 20,
                                             width: 20,
+                                            height: 20,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                             ),
                                           ),
                                           SizedBox(width: 12),
-                                          Text(
-                                            _loadingMessage,
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+                                          Text(_loadingMessage),
                                         ],
                                       )
                                     : Text(
-                                        'LOGIN',
+                                        'Login',
                                         style: TextStyle(
                                           fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                               ),
