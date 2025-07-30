@@ -5,6 +5,7 @@ import '../../services/chat_service.dart';
 import '../../widgets/home_return_arrow.dart';
 import 'chat_screen.dart';
 import 'user_search_screen.dart';
+import '../../navigation/app_drawer.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -20,10 +21,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeReturnAppBar(
-        title: 'Chats',
-        backgroundColor: const Color(0xFF26A69A), // Teal color
+      drawer: AppDrawer(),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF26A69A),
         foregroundColor: Colors.white,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        title: const Text('Chats'),
         actions: [
           StreamBuilder<List<ChatConversation>>(
             stream: _chatService.getConversationsStream(),

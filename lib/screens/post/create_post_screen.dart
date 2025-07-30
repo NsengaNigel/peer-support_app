@@ -271,7 +271,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             elevation: 0,
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  Navigator.of(context).pushReplacementNamed('/');
+                }
+              },
             ),
             title: Text(
               'Create a post',
@@ -464,7 +470,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       onPressed: _isSubmitting
                           ? null
                           : () {
-                              Navigator.pop(context);
+                              if (Navigator.of(context).canPop()) {
+                                Navigator.of(context).pop();
+                              } else {
+                                Navigator.of(context).pushReplacementNamed('/');
+                              }
                             },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.grey.shade700,

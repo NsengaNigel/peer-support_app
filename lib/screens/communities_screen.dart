@@ -310,6 +310,7 @@ class _CommunitiesScreenState extends State<CommunitiesScreen> with SingleTicker
         title: 'Communities',
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
+        showHomeButton: false, // Only show hamburger menu
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

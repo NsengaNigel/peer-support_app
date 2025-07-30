@@ -187,56 +187,67 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   }
 
   Widget _buildCommunitiesList() {
-    if (_userCommunities.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.group_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'No communities joined',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: _userCommunities.length,
-      itemBuilder: (context, index) {
-        final community = _userCommunities[index];
-        final communityData = community.data() as Map<String, dynamic>;
-
-        return Card(
-          margin: EdgeInsets.all(10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          elevation: 4,
-          child: ListTile(
-            leading: Icon(Icons.group, color: Color(0xFF00BCD4)),
-            title: Text(
-              communityData['name'] ?? 'Unnamed Community',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
+    return Column(
+      children: [
+        if (_userCommunities.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, right: 16),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: Icon(Icons.refresh, color: Color(0xFF00BCD4)),
+                tooltip: 'Refresh',
+                onPressed: _loadUserData,
               ),
             ),
-            subtitle: Text(
-              '${communityData['memberCount'] ?? 0} members',
-            ),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/community_detail',
-                arguments: community.id,
-              );
-            },
           ),
-        );
-      },
+        Expanded(
+          child: _userCommunities.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.group_outlined, size: 64, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text(
+                        'No communities joined',
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _userCommunities.length,
+                  itemBuilder: (context, index) {
+                    final community = _userCommunities[index];
+                    final communityData = community.data() as Map<String, dynamic>;
+                    return Card(
+                      margin: EdgeInsets.all(10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      elevation: 4,
+                      child: ListTile(
+                        leading: Icon(Icons.group, color: Color(0xFF00BCD4)),
+                        title: Text(
+                          communityData['name'] ?? 'Unnamed Community',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text('${communityData['memberCount'] ?? 0} members'),
+                        trailing: Icon(Icons.arrow_forward_ios),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            '/community_detail',
+                            arguments: community.id,
+                          ).then((_) => _loadUserData());
+                        },
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 

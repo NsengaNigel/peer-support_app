@@ -39,7 +39,6 @@ class _PostCardState extends State<PostCard> {
 
   Future<void> _toggleSavePost() async {
     if (_isLoadingSave) return;
-
     final postId = widget.post['id'];
     if (postId == null || postId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,39 +49,27 @@ class _PostCardState extends State<PostCard> {
       );
       return;
     }
-
     setState(() => _isLoadingSave = true);
-
+    bool wasSaved = _isPostSaved;
     try {
-      if (_isPostSaved) {
+      if (wasSaved) {
         await _savedPostsService.unsavePost(postId);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Post unsaved'),
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
       } else {
         await _savedPostsService.savePost(postId);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Post saved!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
-        }
       }
-      
-      // Refresh user model to update saved posts
-      await UserManager.refreshUserModel();
-      
-      if (mounted) {
-        setState(() {});
-      }
+      // Optimistically update UI
+      setState(() {});
+      // Refresh user model in background
+      UserManager.refreshUserModel().then((_) {
+        if (mounted) setState(() {});
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(wasSaved ? 'Post unsaved' : 'Post saved!'),
+          backgroundColor: wasSaved ? null : Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -176,47 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   
                   SizedBox(height: 20),
                   
-                  // Navigation icons
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildNavItem(
-                          icon: Icons.groups,
-                          label: 'Communities',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => CommunitiesScreen()),
-                          ),
-                        ),
-                        _buildNavItem(
-                          icon: Icons.post_add,
-                          label: 'Post',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => CreatePostScreen()),
-                          ),
-                        ),
-                        _buildNavItem(
-                          icon: Icons.chat_bubble_outline,
-                          label: 'Chats',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ChatListScreen()),
-                          ),
-                        ),
-                        _buildNavItem(
-                          icon: Icons.person,
-                          label: 'Profile',
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => ProfileScreen()),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Navigation icons section removed since it's redundant with bottom navigation
                   
                   SizedBox(height: 20),
                 ],
@@ -361,42 +321,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
