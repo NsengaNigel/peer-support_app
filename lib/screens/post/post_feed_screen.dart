@@ -92,7 +92,7 @@ class _PostFeedScreenState extends State<PostFeedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: HomeReturnAppBar(
-        title: 'UniReddit',
+        title: 'Peer support',
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
         actions: [

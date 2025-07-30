@@ -108,7 +108,7 @@ class UniversityRedditApp extends StatelessWidget {
       valueListenable: themeNotifier,
       builder: (context, mode, _) {
         return MaterialApp(
-          title: 'UniReddit',
+          title: 'Peer support',
           theme: ThemeData(
             primarySwatch: Colors.orange,
             scaffoldBackgroundColor: Colors.white,

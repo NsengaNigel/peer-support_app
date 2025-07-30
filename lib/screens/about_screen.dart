@@ -12,7 +12,7 @@ class AboutScreen extends StatelessWidget {
         backgroundColor: Color(0xFF00BCD4),
         foregroundColor: Colors.white,
       ),
-      body: Center(child: Text('About UniReddit')),
+      body: Center(child: Text('About Peer support')),
     );
   }
 } 

@@ -67,7 +67,9 @@ class SavedPostsService {
   // Check if a post is saved by current user
   bool isPostSaved(String postId, UserModel? currentUserModel) {
     if (currentUserModel == null) return false;
-    return currentUserModel.savedPosts.contains(postId);
+    // Ensure savedPosts is not null before calling contains
+    final savedPosts = currentUserModel.savedPosts ?? [];
+    return savedPosts.contains(postId);
   }
 
   // Get all saved posts for current user
@@ -83,7 +85,12 @@ class SavedPostsService {
       if (!userDoc.exists) return [];
 
       final userData = userDoc.data() as Map<String, dynamic>;
-      final List<String> savedPostIds = List<String>.from(userData['savedPosts'] ?? []);
+      
+      // Safely handle the case where savedPosts might not exist or be null
+      final dynamic savedPostsData = userData['savedPosts'];
+      final List<String> savedPostIds = (savedPostsData is List)
+          ? List<String>.from(savedPostsData.whereType<String>())
+          : [];
 
       if (savedPostIds.isEmpty) return [];
 
@@ -134,7 +141,13 @@ class SavedPostsService {
       if (!userDoc.exists) return 0;
 
       final userData = userDoc.data() as Map<String, dynamic>;
-      final List<String> savedPostIds = List<String>.from(userData['savedPosts'] ?? []);
+      
+      // Safely handle the case where savedPosts might not exist or be null
+      final dynamic savedPostsData = userData['savedPosts'];
+      final List<String> savedPostIds = (savedPostsData is List)
+          ? List<String>.from(savedPostsData.whereType<String>())
+          : [];
+          
       return savedPostIds.length;
     } catch (e) {
       if (kDebugMode) {

@@ -41,9 +41,10 @@ class _PostCardState extends State<PostCard> {
     if (_isLoadingSave) return;
     final postId = widget.post['id'];
     if (postId == null || postId.isEmpty) {
+      print('[SAVE ERROR] Post ID is null or empty. Post: \\${widget.post}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Cannot save: Post ID not available'),
+          content: Text('Cannot save: Post ID not available (diagnostic)'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -53,14 +54,17 @@ class _PostCardState extends State<PostCard> {
     bool wasSaved = _isPostSaved;
     try {
       if (wasSaved) {
+        print('[SAVE ACTION] Unsaving post: $postId');
         await _savedPostsService.unsavePost(postId);
       } else {
+        print('[SAVE ACTION] Saving post: $postId');
         await _savedPostsService.savePost(postId);
       }
       // Optimistically update UI
       setState(() {});
       // Refresh user model in background
       UserManager.refreshUserModel().then((_) {
+        print('[SAVE ACTION] User model refreshed after save/unsave.');
         if (mounted) setState(() {});
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,9 +111,10 @@ class _PostCardState extends State<PostCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Community and author info
+              // Community info and admin actions
               Row(
                 children: [
+                  // Community name
                   GestureDetector(
                     onTap: widget.onCommunityTap,
                     child: CircleAvatar(
@@ -128,46 +133,19 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                          onTap: widget.onCommunityTap,
-                          child: Text(
-                            'r/$communityName',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: widget.onUserTap,
-                              child: Text(
-                                'u/$authorUsername',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              ' • ${timeago.format(createdAt)}',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  // Community name text
+                  GestureDetector(
+                    onTap: widget.onCommunityTap,
+                    child: Text(
+                      'r/$communityName',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Theme.of(context).primaryColor,
+                      ),
                     ),
                   ),
+                  const Spacer(),
                   // Admin actions for admins/moderators
                   if (UserManager.currentUserModel?.role.canDeletePosts() == true && widget.post['id'] != null)
                     AdminPostActions(
@@ -177,8 +155,8 @@ class _PostCardState extends State<PostCard> {
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
-              // Post title
+              const SizedBox(height: 8),
+              // Post title and content
               Text(
                 title,
                 style: const TextStyle(

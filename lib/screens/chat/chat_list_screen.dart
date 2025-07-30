@@ -21,16 +21,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
-      drawer: AppDrawer(),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF26A69A),
-=======
       drawer: AppDrawer(onLogout: null), // Pass null since this is not the main navigation
       appBar: AppBar(
         title: const Text('Chats'),
         backgroundColor: const Color(0xFF26A69A), // Teal color
->>>>>>> 5d6986edafb881b93404714137d73ef5134f231c
         foregroundColor: Colors.white,
         leading: Builder(
           builder: (context) => IconButton(
@@ -38,7 +32,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const Text('Chats'),
         actions: [
           StreamBuilder<List<ChatConversation>>(
             stream: _chatService.getConversationsStream(),

@@ -1,7 +1,4 @@
-2025/07/29-18:24:47.009 4a40 Reusing MANIFEST C:\Users\Hello\AppData\Local\Temp\flutter_tools.4d1b68a4\flutter_tools_chrome_device.690e64d7\Default\shared_proto_db/MANIFEST-000001
-2025/07/29-18:24:47.014 4a40 Recovering log #14
-2025/07/29-18:24:47.018 4a40 Reusing old log C:\Users\Hello\AppData\Local\Temp\flutter_tools.4d1b68a4\flutter_tools_chrome_device.690e64d7\Default\shared_proto_db/000014.log 
-2025/07/29-18:24:47.020 4a40 Delete type=0 #4
-2025/07/29-18:24:47.021 4a40 Delete type=0 #5
-2025/07/29-18:24:47.021 4a40 Delete type=0 #8
-2025/07/29-18:24:47.021 4a40 Delete type=0 #11
+2025/07/30-11:58:40.670 3faf2 Reusing MANIFEST /private/var/folders/py/3s0yj3rj4q37cxjz4m55c2pm0000gp/T/flutter_tools.0f0F3k/flutter_tools_chrome_device.rpTUNr/Default/shared_proto_db/MANIFEST-000001
+2025/07/30-11:58:40.671 3faf2 Recovering log #4
+2025/07/30-11:58:40.671 3faf2 Reusing old log /private/var/folders/py/3s0yj3rj4q37cxjz4m55c2pm0000gp/T/flutter_tools.0f0F3k/flutter_tools_chrome_device.rpTUNr/Default/shared_proto_db/000004.log 
+2025/07/30-11:58:40.672 3faf2 Delete type=0 #3

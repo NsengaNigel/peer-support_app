@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/comments_service.dart';
+import '../services/saved_posts_service.dart';
+import '../services/user_manager.dart';
 import '../services/user_manager.dart';
 import '../models/comment.dart';
 import '../widgets/admin_actions.dart';
@@ -21,6 +23,9 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen> {
+  final SavedPostsService _savedPostsService = SavedPostsService();
+  bool _isSaved = false;
+  bool _isSaving = false;
   final TextEditingController _commentController = TextEditingController();
   final CommentsService _commentsService = CommentsService();
   List<Comment> _comments = [];
@@ -74,10 +79,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       final comments = await _commentsService.getCommentsForPost(widget.postId);
 
       if (mounted) {
+        final currentUser = UserManager.currentUserModel;
+        final postId = postData['id'] ?? widget.postId;
+        final isSaved = _savedPostsService.isPostSaved(postId, currentUser);
         setState(() {
           _post = postData;
           _comments = comments;
           _isLoading = false;
+          _isSaved = isSaved;
         });
       }
     } catch (e) {
@@ -138,12 +147,12 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           PopupMenuButton(
             itemBuilder: (context) => [
               PopupMenuItem(
-                value: 'save',
+                value: 'save_unsave',
                 child: Row(
                   children: [
-                    Icon(Icons.bookmark_outline, size: 16),
+                    Icon(_isSaved ? Icons.bookmark : Icons.bookmark_outline, size: 16),
                     SizedBox(width: 8),
-                    Text('Save Post'),
+                    Text(_isSaved ? 'Unsave Post' : 'Save Post'),
                   ],
                 ),
               ),
@@ -158,10 +167,39 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                 ),
               ),
             ],
-            onSelected: (value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$value functionality coming soon!')),
-              );
+            onSelected: (value) async {
+              if (value == 'share') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Share functionality coming soon!')),
+                );
+              } else if (value == 'save_unsave') {
+                if (_isSaving) return;
+                setState(() => _isSaving = true);
+                final postId = _post?['id'] ?? widget.postId;
+                try {
+                  if (_isSaved) {
+                    await _savedPostsService.unsavePost(postId);
+                    await UserManager.refreshUserModel();
+                    setState(() => _isSaved = false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Post unsaved.'), backgroundColor: Colors.orange),
+                    );
+                  } else {
+                    await _savedPostsService.savePost(postId);
+                    await UserManager.refreshUserModel();
+                    setState(() => _isSaved = true);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Post saved!'), backgroundColor: Colors.green),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                } finally {
+                  setState(() => _isSaving = false);
+                }
+              }
             },
           ),
         ],
