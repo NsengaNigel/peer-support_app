@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/user_manager.dart';
 import '../services/comments_service.dart';
+import '../services/post_service.dart';
 import '../models/comment.dart';
 import '../widgets/home_return_arrow.dart';
 import '../widgets/app_scaffold.dart';
@@ -120,7 +121,51 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Icon(Icons.arrow_forward_ios),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  tooltip: 'Delete Post',
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('Delete Post'),
+                        content: Text('Are you sure you want to delete this post?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            child: Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      try {
+                        await PostService().deletePost(post.id);
+                        setState(() {
+                          _userPosts.removeAt(index);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Post deleted'), backgroundColor: Colors.green),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error deleting post: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
+                  },
+                ),
+                Icon(Icons.arrow_forward_ios),
+              ],
+            ),
             onTap: () {
               Navigator.pushNamed(
                 context,
@@ -477,42 +522,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                               },
                             ),
                             Divider(height: 1),
-                            ListTile(
-                              leading: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF00BCD4).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(Icons.security, color: Color(0xFF00BCD4)),
-                              ),
-                              title: Text('Privacy & Security'),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Privacy settings coming soon!')),
-                                );
-                              },
-                            ),
-                            Divider(height: 1),
-                            ListTile(
-                              leading: Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF00BCD4).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(Icons.notifications, color: Color(0xFF00BCD4)),
-                              ),
-                              title: Text('Notifications'),
-                              trailing: Icon(Icons.arrow_forward_ios, size: 16),
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Notification settings coming soon!')),
-                                );
-                              },
-                            ),
-                            Divider(height: 1),
+
                             ListTile(
                               leading: Container(
                                 padding: EdgeInsets.all(8),

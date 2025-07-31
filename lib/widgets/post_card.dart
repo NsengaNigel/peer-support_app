@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../services/saved_posts_service.dart';
 import '../services/user_manager.dart';
+import '../services/post_service.dart';
 import '../models/user_model.dart';
 import '../widgets/admin_actions.dart';
 
@@ -182,6 +183,49 @@ class _PostCardState extends State<PostCard> {
               // Action buttons
               Row(
                 children: [
+                  // Show delete button if current user is post owner
+                  if (UserManager.currentUserModel?.uid == widget.post['authorId'])
+                    IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      tooltip: 'Delete Post',
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text('Delete Post'),
+                            content: Text('Are you sure you want to delete this post?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(false),
+                                child: Text('Cancel'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.of(context).pop(true),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                child: Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          try {
+                            await PostService().deletePost(widget.post['id']);
+                            if (widget.onPostDeleted != null) widget.onPostDeleted!();
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Post deleted'), backgroundColor: Colors.green),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error deleting post: $e'), backgroundColor: Colors.red),
+                              );
+                            }
+                          }
+                        }
+                      },
+                    ),
                   InkWell(
                     onTap: widget.onCommentTap,
                     borderRadius: BorderRadius.circular(20),

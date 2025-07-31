@@ -41,5 +41,8 @@ class PostService {
         .get();
 
     return snapshot.docs.map((doc) => Post.fromMap(doc.data(), doc.id)).toList();
+  }  /// Delete a post by ID
+  Future<void> deletePost(String postId) async {
+    await _firestore.collection('posts').doc(postId).delete();
   }
 }

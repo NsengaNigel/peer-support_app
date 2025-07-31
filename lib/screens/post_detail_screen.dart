@@ -8,6 +8,7 @@ import '../services/user_manager.dart';
 import '../models/comment.dart';
 import '../widgets/admin_actions.dart';
 import '../widgets/home_return_arrow.dart';
+import '../services/post_service.dart';
 import '../main.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -271,6 +272,48 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                                   Navigator.of(context).pop();
                                 },
                               ),
+                              if (UserManager.currentUserModel?.uid == _post!['authorId'])
+                                IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  tooltip: 'Delete Post',
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text('Delete Post'),
+                                        content: Text('Are you sure you want to delete this post?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(false),
+                                            child: Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.of(context).pop(true),
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                            child: Text('Delete'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      try {
+                                        await PostService().deletePost(widget.postId);
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Post deleted'), backgroundColor: Colors.green),
+                                          );
+                                          Navigator.of(context).pop();
+                                        }
+                                      } catch (e) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Error deleting post: $e'), backgroundColor: Colors.red),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
+                                ),
                             ],
                           ),
                           SizedBox(height: 16),
