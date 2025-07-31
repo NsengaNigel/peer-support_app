@@ -68,11 +68,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // Call success callback if any
         widget.onSignUpSuccess?.call();
 
-        // Navigate to LoginScreen after short delay to allow snackbar to show
+        // Navigate to home/main/root after short delay to allow snackbar to show
         Future.delayed(Duration(milliseconds: 500), () {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => LoginScreen()),
-          );
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         });
       }
     } on FirebaseAuthException catch (e) {
